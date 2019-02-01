@@ -1,12 +1,16 @@
 from McsPy import McsData
 import socket
 import threading
+import time
+import pickle
 
 
 class Experiment(object):
     def __init__(self, h5_file):
         self.data = McsData.RawData(h5_file)
         self.stream = self.data.recordings[0].analog_streams[0]
+        self.sample_rate = self.stream.channel_infos[0].sampling_frequency.magnitude
+        self.channels = len(self.stream.channel_infos)
 
 
     def get_channel_data(self, ch):
@@ -18,6 +22,11 @@ class Server(object):
         self.host = '0.0.0.0'
         self.port = port
         self.experiment = Experiment('mea_data/1.h5')
+        self.example_channel_data, self.unit = self.experiment.get_channel_data(0)
+
+        # Set up playback settings.
+        self.tick_rate = 0.01
+        self.data_per_tick = int(self.experiment.sample_rate * self.tick_rate)
 
 
     def listen(self):
@@ -44,14 +53,21 @@ class Server(object):
 
 
     def handle_client(self, client, addr):
+        tick = 0
+
         while True:
-            data = client.recv(16)
-            print('Received {data}'.format(data=data))
-
-            if data:
-                client.sendall(data)
-
-            if data == b'q\n':
+            try:
+                data = self.example_channel_data[tick*self.data_per_tick:(tick+1)*self.data_per_tick]
+                client.send(pickle.dumps(data))
+                tick = tick + 1
+                time.sleep(self.tick_rate)
+            except (BrokenPipeError, OSError):
+                print('[INFO]: Closing connection from {addr}'.format(addr=addr))
+                client.close()
+                break
+            except Exception as e:
+                print('[ERROR]: Error handling connection from {addr}'.format(addr=addr))
+                print('[ERROR]: {e}'.format(e=e))
                 client.close()
                 break
 
