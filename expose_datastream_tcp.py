@@ -32,10 +32,10 @@ class Experiment(object):
 
 
 class Server(object):
-    def __init__(self, port):
+    def __init__(self, port, experiment_path):
         self.host = '0.0.0.0'
         self.port = port
-        self.experiment = Experiment('mea_data/1.h5')
+        self.experiment = Experiment(experiment_path)
         self.example_channel_data, self.unit = self.experiment.get_channel_data(0)
 
         # Set up playback settings.
@@ -200,16 +200,22 @@ class MEAMEr(object):
             logger.error(e)
 
 
-def main():
-    """For setting up a server for an experiment."""
-    # server = Server(8080)
-    # server.listen()
-
-    """For setting up remote MEAME and receiving data."""
-    meame = MEAMEr()
-    meame.initialize_DAQ(sample_rate=20000, segment_length=100)
-    meame.recv(sample_rate=20000, segment_length=100)
+def main(args):
+    if args.live:
+        meame = MEAMEr()
+        meame.initialize_DAQ(sample_rate=20000, segment_length=100)
+        meame.recv(sample_rate=20000, segment_length=100)
+    elif args.playback:
+        server = Server(8080, args.playback)
+        server.listen()
 
 
 if __name__ == '__main__':
-    main()
+    import argparse
+    parser = argparse.ArgumentParser(description='Grinder - the minimal MEAME communicator')
+
+    parser.add_argument('--live', help='Acquire live data from remote MEAME DAQ server', action='store_true')
+    parser.add_argument('--playback', metavar='FILE', help='Replay and serve experiments from hd5 files')
+
+    args = parser.parse_args()
+    main(args)
