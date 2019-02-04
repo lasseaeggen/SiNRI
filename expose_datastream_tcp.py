@@ -4,6 +4,18 @@ import threading
 import time
 import pickle
 import requests
+import logging
+
+
+# Set up a global (root) logger for now (yuck!). Fix this when things
+# are split into modules.
+formatter = logging.Formatter(fmt='%(asctime)s - %(levelname)s - %(module)s - %(message)s')
+handler = logging.StreamHandler()
+handler.setFormatter(formatter)
+
+logger = logging.getLogger('grinder')
+logger.setLevel(logging.DEBUG)
+logger.addHandler(handler)
 
 
 class Experiment(object):
@@ -35,10 +47,10 @@ class Server(object):
 
         try:
             self.socket.bind((self.host, self.port))
-            print('[INFO]: Server started on {host}:{port}'.format(host=self.host, port=self.port))
+            logger.info('Server started on {host}:{port}'.format(host=self.host, port=self.port))
         except Exception as e:
-            print('[ERROR]: Could not bind to port {port}'.format(port=self.port))
-            print('[ERROR]: {e}'.format(e=e))
+            logger.error('Could not bind to port {port}'.format(port=self.port))
+            logger.error('{e}'.format(e=e))
             return
 
         try:
@@ -46,10 +58,10 @@ class Server(object):
             while True:
                 (client, addr) = self.socket.accept()
                 client.settimeout(60)
-                print('[INFO]: Received connection from {addr}'.format(addr=addr))
+                logger.info('Received connection from {addr}'.format(addr=addr))
                 threading.Thread(target=self.handle_client, args=(client, addr)).start()
         except (KeyboardInterrupt, SystemExit):
-            print('[INFO]: Shutdown request detected, shutting down gracefully')
+            logger.info('Shutdown request detected, shutting down gracefully')
             self.socket.shutdown(socket.SHUT_RDWR)
 
 
@@ -63,12 +75,12 @@ class Server(object):
                 tick = tick + 1
                 time.sleep(self.tick_rate)
             except (BrokenPipeError, OSError):
-                print('[INFO]: Closing connection from {addr}'.format(addr=addr))
+                logger.info('Closing connection from {addr}'.format(addr=addr))
                 client.close()
                 break
             except Exception as e:
-                print('[ERROR]: Error handling connection from {addr}'.format(addr=addr))
-                print('[ERROR]: {e}'.format(e=e))
+                logger.error('Error handling connection from {addr}'.format(addr=addr))
+                logger.error('{e}'.format(e=e))
                 client.close()
                 break
 
@@ -84,8 +96,8 @@ class MEAMEr(object):
 
 
     def connection_error(self, e):
-        print('[ERROR]: Could not connect to remote MEAME server')
-        print('[ERROR]: {e}'.format(e=e))
+        logger.error('Could not connect to remote MEAME server')
+        logger.error('{e}'.format(e=e))
 
 
     def initialize_DAQ(self, sample_rate, segment_length):
@@ -96,19 +108,19 @@ class MEAMEr(object):
             })
 
             if r.status_code == 200:
-                print('[INFO]: Successfully set up MEAME DAQ server')
+                logger.info('Successfully set up MEAME DAQ server')
             else:
-                print('[ERROR]: DAQ connection failed (malformed request?)')
+                logger.info('DAQ connection failed (malformed request?)')
                 return
 
             r = requests.get(self.url('/DAQ/start'))
             if r.status_code == 200:
-                print('[INFO]: Successfully started DAQ server')
+                logger.info('Successfully started DAQ server')
             else:
-                print('[ERROR]: Could not start remote DAQ server')
+                logger.error('Could not start remote DAQ server')
                 return
         except Exception as e:
-            self.connection_error()
+            self.connection_error(e)
 
 
     def stop_DAQ(self):
@@ -119,12 +131,12 @@ class MEAMEr(object):
         try:
             r = requests.get(self.url('/DAQ/stop'))
             if r.status_code == 200:
-                print('[INFO]: Successfully stopped DAQ server')
+                logger.info('Successfully stopped DAQ server')
             else:
-                print('[ERROR]: Could not stop remote DAQ server (status code 500)')
+                logger.error('Could not stop remote DAQ server (status code 500)')
                 return
         except Exception as e:
-            self.connection_error()
+            self.connection_error(e)
 
 
 def main():
