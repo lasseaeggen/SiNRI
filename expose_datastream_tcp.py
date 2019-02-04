@@ -87,12 +87,15 @@ class Server(object):
 
 class MEAMEr(object):
     def __init__(self):
-        self.address = 'http://10.20.92.130'
-        self.port = 8888
+        self.address = '10.20.92.130'
+        self.mea_daq_port = 12340
+        self.sawtooth_port = 12341
+        self.http_address = 'http://' + self.address
+        self.http_port = 8888
 
 
     def url(self, resource):
-        return self.address + ':' + str(self.port) + resource
+        return self.http_address + ':' + str(self.http_port) + resource
 
 
     def connection_error(self, e):
@@ -119,6 +122,11 @@ class MEAMEr(object):
             else:
                 logger.error('Could not start remote DAQ server')
                 return
+
+            # Sleep here to let the DAQ finish setting up. (TODO):
+            # This should actually be done by just fetching
+            # /DAQ/status.
+            time.sleep(0.5)
         except Exception as e:
             self.connection_error(e)
 
@@ -139,6 +147,50 @@ class MEAMEr(object):
             self.connection_error(e)
 
 
+    def recv(self, sample_rate, segment_length):
+        """
+        Receives actual data acquired on the remote DAQ server.
+        """
+        try:
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                s.connect((self.address, self.sawtooth_port))
+                channel_data = [bytearray(b'') for x in range(60)]
+                segment_data = bytearray(b'')
+                current_channel = 0
+                bytes_received = 0
+
+                segments = 0
+                while True:
+                    # Received data points are 32-bit signed integers.
+                    data = s.recv(segment_length*4 - bytes_received)
+                    bytes_received = bytes_received + len(data)
+                    segment_data.extend(data)
+
+                    if (bytes_received != segment_length*4):
+                        continue
+
+                    # Just for debugging purposes. Prints size of
+                    # buffers every second to see if data acquisition
+                    # is somewhat synchronized.
+                    if current_channel == 0:
+                        if segments == 0:
+                            print(len(channel_data[59]))
+                        segments = (segments + 1) % (sample_rate // segment_length)
+
+                    # Save the acquired data.
+                    channel_data[current_channel].extend(segment_data)
+
+                    # Reset for next channel.
+                    segment_data = bytearray(b'')
+                    current_channel = (current_channel + 1) % 60
+                    bytes_received = 0
+        # (TODO): Fix this: Currently other exceptions will remain
+        # uncaught for debugging purposes.
+        except ConnectionError as e:
+            logger.error('Could not listen to remote MEAME DAQ server (sawtooth)')
+            logger.error(e)
+
+
 def main():
     """For setting up a server for an experiment."""
     # server = Server(8080)
@@ -147,6 +199,7 @@ def main():
     """For setting up remote MEAME and receiving data."""
     meame = MEAMEr()
     meame.initialize_DAQ(sample_rate=20000, segment_length=100)
+    meame.recv(sample_rate=20000, segment_length=100)
 
 
 if __name__ == '__main__':
