@@ -3,6 +3,7 @@ import socket
 import threading
 import time
 import pickle
+import requests
 
 
 class Experiment(object):
@@ -72,9 +73,68 @@ class Server(object):
                 break
 
 
+class MEAMEr(object):
+    def __init__(self):
+        self.address = 'http://10.20.92.130'
+        self.port = 8888
+
+
+    def url(self, resource):
+        return self.address + ':' + str(self.port) + resource
+
+
+    def connection_error(self, e):
+        print('[ERROR]: Could not connect to remote MEAME server')
+        print('[ERROR]: {e}'.format(e=e))
+
+
+    def initialize_DAQ(self, sample_rate, segment_length):
+        try:
+            r = requests.post(self.url('/DAQ/connect'), json = {
+                'samplerate': sample_rate,
+                'segmentLength': segment_length,
+            })
+
+            if r.status_code == 200:
+                print('[INFO]: Successfully set up MEAME DAQ server')
+            else:
+                print('[ERROR]: DAQ connection failed (malformed request?)')
+                return
+
+            r = requests.get(self.url('/DAQ/start'))
+            if r.status_code == 200:
+                print('[INFO]: Successfully started DAQ server')
+            else:
+                print('[ERROR]: Could not start remote DAQ server')
+                return
+        except Exception as e:
+            self.connection_error()
+
+
+    def stop_DAQ(self):
+        """
+        Warning: stopping the DAQ server is not implemented in
+        MEAME. This method will in practice achieve nothing at all.
+        """
+        try:
+            r = requests.get(self.url('/DAQ/stop'))
+            if r.status_code == 200:
+                print('[INFO]: Successfully stopped DAQ server')
+            else:
+                print('[ERROR]: Could not stop remote DAQ server (status code 500)')
+                return
+        except Exception as e:
+            self.connection_error()
+
+
 def main():
-    server = Server(8080)
-    server.listen()
+    """For setting up a server for an experiment."""
+    # server = Server(8080)
+    # server.listen()
+
+    """For setting up remote MEAME and receiving data."""
+    meame = MEAMEr()
+    meame.initialize_DAQ(sample_rate=20000, segment_length=100)
 
 
 if __name__ == '__main__':
