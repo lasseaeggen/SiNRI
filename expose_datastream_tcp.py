@@ -5,6 +5,7 @@ import time
 import pickle
 import requests
 import logging
+import struct
 
 
 # Set up a global (root) logger for now (yuck!). Fix this when things
@@ -184,6 +185,14 @@ class MEAMEr(object):
                     segment_data = bytearray(b'')
                     current_channel = (current_channel + 1) % 60
                     bytes_received = 0
+
+                    # After a second, unpack a channel and print it
+                    # out for debugging purposes to see whether it's a
+                    # sawtooth wave.
+                    if len(channel_data[0]) == (sample_rate * 4) * 1:
+                        for i in struct.iter_unpack('<i', channel_data[40]):
+                            print(i)
+                        exit()
         # (TODO): Fix this: Currently other exceptions will remain
         # uncaught for debugging purposes.
         except ConnectionError as e:
