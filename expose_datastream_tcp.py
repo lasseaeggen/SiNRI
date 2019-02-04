@@ -190,9 +190,9 @@ class MEAMEr(object):
                     # out for debugging purposes to see whether it's a
                     # sawtooth wave.
                     if len(channel_data[0]) == (sample_rate * 4) * 1:
-                        for i in struct.iter_unpack('<i', channel_data[40]):
+                        for i in struct.iter_unpack('<i', channel_data[50]):
                             print(i)
-                        exit()
+                        return
         # (TODO): Fix this: Currently other exceptions will remain
         # uncaught for debugging purposes.
         except ConnectionError as e:
