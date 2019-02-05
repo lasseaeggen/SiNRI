@@ -32,14 +32,16 @@ class Experiment(object):
 
 
 class Server(object):
-    def __init__(self, port, experiment_path):
+    def __init__(self, port, experiment):
         self.host = '0.0.0.0'
         self.port = port
-        self.experiment = Experiment(experiment_path)
-        self.example_channel_data, self.unit = self.experiment.get_channel_data(0)
-
-        # Set up playback settings.
+        self.experiment = experiment
         self.tick_rate = 0.01
+        self.change_channel(0)
+
+
+    def change_channel(self, ch):
+        self.example_channel_data, self.unit = self.experiment.get_channel_data(ch)
         self.data_per_tick = int(self.experiment.sample_rate * self.tick_rate)
 
 
@@ -206,7 +208,8 @@ def main(args):
         meame.initialize_DAQ(sample_rate=20000, segment_length=100)
         meame.recv(sample_rate=20000, segment_length=100)
     elif args.playback:
-        server = Server(8080, args.playback)
+        experiment = Experiment(args.playback)
+        server = Server(8080, experiment)
         server.listen()
 
 
@@ -216,6 +219,7 @@ if __name__ == '__main__':
 
     parser.add_argument('--live', help='Acquire live data from remote MEAME DAQ server', action='store_true')
     parser.add_argument('--playback', metavar='FILE', help='Replay and serve experiments from hd5 files')
+    parser.add_argument('--channel', help='Specify which of the MEA output channels is wanted')
 
     args = parser.parse_args()
     main(args)
