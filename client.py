@@ -1,7 +1,8 @@
 import socket
 import struct
 import pyqtgraph as pg
-import random
+import scipy.signal
+import datetime
 
 
 def main():
@@ -32,6 +33,10 @@ def main():
     # Create a callback for plot clicks to select a single channel.
     zoomed_plot = None
     def on_click(event):
+        # Ignore clicks that are not left-clicks.
+        if event.button() != 1:
+            return
+
         nonlocal plots
         nonlocal zoomed_plot
 
@@ -61,6 +66,7 @@ def main():
     win.scene().sigMouseClicked.connect(on_click)
 
     segment_counter = 0
+    timer_counter = 0
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         s.connect((address, port))
         channel_data = []
@@ -80,23 +86,32 @@ def main():
             for i in struct.iter_unpack('f', segment_data):
                 channel_data.append(i[0])
 
+            # For the purpose of debugging of timing.
+            timer_counter = (timer_counter + 1) % (sample_rate // data_per_tick)
+            if timer_counter == 0:
+                print(datetime.datetime.now())
+
             # Slice data to only contain the last three seconds.
             seconds = 3
             channel_data = channel_data[-(sample_rate*seconds):]
-            x_axis_data = [x for x in range(len(channel_data))]
+
+            # Data to plot.
+            y_axis_data = channel_data
+            # y_axis_data = list(scipy.signal.decimate(channel_data, 8))
+            x_axis_data = [x for x in range(len(y_axis_data))]
 
             # Plot the actual data every second (for now).
             if zoomed_plot:
                 segment_counter = (segment_counter + 1) % 5
                 if segment_counter == 0:
-                    zoomed_plot.plot(x_axis_data, channel_data, clear=True)
+                    zoomed_plot.plot(x_axis_data, y_axis_data, clear=True)
                     pg.QtGui.QApplication.processEvents()
             else:
-                segment_counter = (segment_counter + 1) % 50
+                segment_counter = (segment_counter + 1) % 100
                 if segment_counter == 0:
                     for i in range(rows):
                         for j in range(cols):
-                            plots[i*cols+j].plot(x_axis_data, channel_data, clear=True)
+                            plots[i*cols+j].plot(x_axis_data, y_axis_data, clear=True)
                     pg.QtGui.QApplication.processEvents()
 
             # Reset for next segment.
