@@ -2,7 +2,6 @@ from McsPy import McsData
 import socket
 import threading
 import time
-import pickle
 import requests
 import logging
 import struct
@@ -74,7 +73,7 @@ class Server(object):
         while True:
             try:
                 data = self.example_channel_data[tick*self.data_per_tick:(tick+1)*self.data_per_tick]
-                client.send(pickle.dumps(data))
+                client.send(struct.pack('{}f'.format(len(data)), *data))
                 tick = tick + 1
                 time.sleep(self.tick_rate)
             except (BrokenPipeError, OSError):
