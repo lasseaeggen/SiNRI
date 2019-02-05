@@ -36,7 +36,7 @@ class Server(object):
         self.port = port
         self.experiment = experiment
         self.tick_rate = 0.01
-        self.change_channel(0)
+        self.change_channel(53)
 
 
     def change_channel(self, ch):

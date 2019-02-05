@@ -1,5 +1,7 @@
 import socket
 import struct
+import pyqtgraph as pg
+import random
 
 
 def main():
@@ -9,11 +11,28 @@ def main():
     port = 8080
 
     # sample_rate * tick_rate, hard coded for now.
-    data_per_tick = int(10000 * 0.01)
+    sample_rate = 10000
+    tick_rate = 0.01
+    data_per_tick = int(sample_rate * tick_rate)
 
+    # Plot the received data in real time.
+    app = pg.QtGui.QApplication([])
+    win = pg.GraphicsWindow()
+
+    pw = win.addPlot()
+    pw2 = win.addPlot()
+    pw3 = win.addPlot()
+    pw4 = win.addPlot()
+
+    pw.setYRange(-10**(-4), 10**(-4), padding=0)
+    pw2.setYRange(-10**(-4), 10**(-4), padding=0)
+    pw3.setYRange(-10**(-4), 10**(-4), padding=0)
+    pw4.setYRange(-10**(-4), 10**(-4), padding=0)
+
+    segment_counter = 0
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         s.connect((address, port))
-        channel_data = bytearray(b'')
+        channel_data = []
         segment_data = bytearray(b'')
         bytes_received = 0
 
@@ -28,9 +47,22 @@ def main():
 
             # Print the received segment data.
             for i in struct.iter_unpack('f', segment_data):
-                print(i)
+                channel_data.append(i[0])
 
-            channel_data.extend(segment_data)
+            # Slice data to only contain the last three seconds.
+            seconds = 3
+            channel_data = channel_data[-(sample_rate*seconds):]
+
+            # Plot the actual data every 10th iteration.
+            segment_counter = (segment_counter + 1) % 10
+            if segment_counter == 0:
+                pw.plot([x for x in range(len(channel_data))], channel_data, clear=True)
+                pw2.plot([x for x in range(len(channel_data))], channel_data, clear=True)
+                pw3.plot([x for x in range(len(channel_data))], channel_data, clear=True)
+                pw4.plot([x for x in range(len(channel_data))], channel_data, clear=True)
+                pg.QtGui.QApplication.processEvents()
+
+            # Reset for next segment.
             segment_data = bytearray(b'')
             bytes_received = 0
 
