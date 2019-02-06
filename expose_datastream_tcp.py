@@ -67,13 +67,35 @@ class Server(object):
             self.socket.shutdown(socket.SHUT_RDWR)
 
 
+    def publish(self, client, tick):
+        data = self.example_channel_data[tick*self.data_per_tick:(tick+1)*self.data_per_tick]
+        client.send(struct.pack('{}f'.format(len(data)), *data))
+
+
+    def forward_channel(self, ch, addr, port):
+        self.change_channel(ch)
+
+        # Connect to remote client to forward a channel.
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            s.connect((addr, port))
+
+            tick = 0
+            while True:
+                try:
+                    self.publish(s, tick)
+                    tick = tick + 1
+                    time.sleep(self.tick_rate)
+                except (BrokenPipeError, OSError):
+                    logger.info('Closing connection to {addr}'.format(addr=addr))
+                    client.close()
+                    break
+
+
     def handle_client(self, client, addr):
         tick = 0
-
         while True:
             try:
-                data = self.example_channel_data[tick*self.data_per_tick:(tick+1)*self.data_per_tick]
-                client.send(struct.pack('{}f'.format(len(data)), *data))
+                self.publish(client, tick)
                 tick = tick + 1
                 time.sleep(self.tick_rate)
             except (BrokenPipeError, OSError):
