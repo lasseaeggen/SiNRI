@@ -207,9 +207,13 @@ def main(args):
         meame.initialize_DAQ(sample_rate=20000, segment_length=100)
         meame.recv(sample_rate=20000, segment_length=100)
     elif args.playback:
-        experiment = Experiment(args.playback)
-        server = Server(8080, experiment)
-        server.listen()
+        try:
+            experiment = Experiment(args.playback)
+            server = Server(8080, experiment)
+            server.listen()
+        except Exception as e:
+            logger.info('Unexpected event, shutting down gracefully')
+            server.socket.shutdown(socket.SHUT_RDWR)
 
 
 if __name__ == '__main__':
