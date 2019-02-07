@@ -33,11 +33,15 @@ class Experiment(object):
 
 
 class OfflineStream(object):
-    def __init__(self, client, experiment, channel):
+    def __init__(self, client, channel, experiment='default'):
         self.client = client
-        self.experiment = experiment
         self.tick_rate = 0.01
         self.channel = channel
+
+        # Initialize the actual experiment
+        if experiment == 'default':
+            experiment = 'mea_data/1.h5'
+        self.experiment = Experiment(experiment)
         self.change_channel(self.channel)
 
 
@@ -76,10 +80,9 @@ class OfflineStream(object):
 
 
 class Server(object):
-    def __init__(self, port, experiment):
+    def __init__(self, port):
         self.host = '0.0.0.0'
         self.port = port
-        self.experiment = experiment
 
 
     def listen(self):
@@ -126,12 +129,16 @@ class Server(object):
 
 
     def handle_client(self, client, addr):
-        stream = OfflineStream(client, self.experiment, channel=0)
+        try:
+            settings_json = client.recv(2048)
+            settings = json.loads(settings_json.decode('utf-8'))
+        except (json.decoder.JSONDecodeError, KeyError) as e:
+            logger.info('Received malformed JSON from {addr}, disconnecting'.format(addr=addr))
+            return
 
         try:
-            settings = client.recv(2048)
-            stream.load_settings(json.loads(settings.decode('utf-8')))
-        except json.decoder.JSONDecodeError as e:
+            stream = OfflineStream(client, settings['channel'], settings['experiment'])
+        except KeyError as e:
             logger.info('Received malformed settings from {addr}, disconnecting'.format(addr=addr))
             stream.close()
             return
@@ -273,8 +280,7 @@ def main(args):
         meame.recv(sample_rate=20000, segment_length=100)
     elif args.playback:
         try:
-            experiment = Experiment(args.playback)
-            server = Server(8080, experiment)
+            server = Server(8080)
             server.listen()
         except Exception as e:
             logger.info('Unexpected event, shutting down gracefully')
@@ -286,7 +292,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Grinder - the minimal MEAME communicator')
 
     parser.add_argument('--live', help='Acquire live data from remote MEAME DAQ server', action='store_true')
-    parser.add_argument('--playback', metavar='FILE', help='Replay and serve experiments from hd5 files')
+    parser.add_argument('--playback', help='Replay and serve experiments from hd5 files', action='store_true')
     parser.add_argument('--channel', help='Specify which of the MEA output channels is wanted')
 
     args = parser.parse_args()

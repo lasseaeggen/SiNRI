@@ -76,6 +76,7 @@ def main():
 
         # Write JSON formatted settings to the remote stream server.
         s.send(json.dumps({
+            'experiment': 'default',
             'channel': 15,
         }).encode('utf-8'))
 
