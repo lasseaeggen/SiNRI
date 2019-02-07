@@ -3,6 +3,7 @@ import struct
 import pyqtgraph as pg
 import scipy.signal
 import datetime
+import json
 
 
 def main():
@@ -72,6 +73,11 @@ def main():
         channel_data = []
         segment_data = bytearray(b'')
         bytes_received = 0
+
+        # Write JSON formatted settings to the remote stream server.
+        s.send(json.dumps({
+            'channel': 15,
+        }).encode('utf-8'))
 
         while True:
             # We are receiving 4-byte floats.

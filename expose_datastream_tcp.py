@@ -5,6 +5,8 @@ import time
 import requests
 import logging
 import struct
+import json
+import traceback
 
 
 # Set up a global (root) logger for now (yuck!). Fix this when things
@@ -26,8 +28,51 @@ class Experiment(object):
         self.channels = len(self.stream.channel_infos)
 
 
-    def get_channel_data(self, ch):
-        return self.stream.get_channel_in_range(ch, 0, self.stream.channel_data.shape[1])
+    def get_channel_data(self, channel):
+        return self.stream.get_channel_in_range(channel, 0, self.stream.channel_data.shape[1])
+
+
+class OfflineStream(object):
+    def __init__(self, client, experiment, channel):
+        self.client = client
+        self.experiment = experiment
+        self.tick_rate = 0.01
+        self.channel = channel
+        self.change_channel(self.channel)
+
+
+    # For now each OfflineStream has a copy of the experiment that it
+    # will receive from Server, which may need to be re-done in the
+    # future. For now we just choose one experiment on Server startup.
+    def change_channel(self, ch):
+        self.example_channel_data, self.unit = self.experiment.get_channel_data(ch)
+        self.data_per_tick = int(self.experiment.sample_rate * self.tick_rate)
+        self.current_tick = 0
+
+
+    def load_settings(self, settings):
+        if 'channel' not in settings:
+            raise json.decoder.JSONDecodeError
+        self.change_channel(settings['channel'])
+        logger.info('Changed channel to channel:{ch}'.format(ch=settings['channel']))
+
+
+    def get_tick_data(self):
+        return self.example_channel_data[self.current_tick*self.data_per_tick:(self.current_tick+1)*self.data_per_tick]
+
+
+    def tick(self):
+        self.current_tick = self.current_tick + 1
+        time.sleep(self.tick_rate)
+
+
+    def publish(self):
+        data = self.get_tick_data()
+        self.client.send(struct.pack('{}f'.format(len(data)), *data))
+
+
+    def close(self):
+        self.client.close()
 
 
 class Server(object):
@@ -35,13 +80,6 @@ class Server(object):
         self.host = '0.0.0.0'
         self.port = port
         self.experiment = experiment
-        self.tick_rate = 0.01
-        self.change_channel(53)
-
-
-    def change_channel(self, ch):
-        self.example_channel_data, self.unit = self.experiment.get_channel_data(ch)
-        self.data_per_tick = int(self.experiment.sample_rate * self.tick_rate)
 
 
     def listen(self):
@@ -67,18 +105,14 @@ class Server(object):
             self.socket.shutdown(socket.SHUT_RDWR)
 
 
-    def publish(self, client, tick):
-        data = self.example_channel_data[tick*self.data_per_tick:(tick+1)*self.data_per_tick]
-        client.send(struct.pack('{}f'.format(len(data)), *data))
-
-
     def forward_channel(self, ch, addr, port):
+        """
+        Connects directly to a remote client to forward an experiment
+        channel.
+        """
         self.change_channel(ch)
-
-        # Connect to remote client to forward a channel.
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             s.connect((addr, port))
-
             tick = 0
             while True:
                 try:
@@ -92,19 +126,28 @@ class Server(object):
 
 
     def handle_client(self, client, addr):
-        tick = 0
+        stream = OfflineStream(client, self.experiment, channel=0)
+
+        try:
+            settings = client.recv(2048)
+            stream.load_settings(json.loads(settings.decode('utf-8')))
+        except json.decoder.JSONDecodeError as e:
+            logger.info('Received malformed settings from {addr}, disconnecting'.format(addr=addr))
+            stream.close()
+            return
+
         while True:
             try:
-                self.publish(client, tick)
-                tick = tick + 1
-                time.sleep(self.tick_rate)
+                stream.publish()
+                stream.tick()
             except (BrokenPipeError, OSError):
-                logger.info('Closing connection from {addr}'.format(addr=addr))
+                logger.info('Closing connection from {addr} (broken pipe)'.format(addr=addr))
                 client.close()
                 break
             except Exception as e:
                 logger.error('Error handling connection from {addr}'.format(addr=addr))
                 logger.error('{e}'.format(e=e))
+                logger.error(traceback.format_exc())
                 client.close()
                 break
 
