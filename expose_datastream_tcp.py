@@ -113,15 +113,13 @@ class Server(object):
         Connects directly to a remote client to forward an experiment
         channel.
         """
-        self.change_channel(ch)
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             s.connect((addr, port))
-            tick = 0
+            stream = OfflineStream(s, ch)
             while True:
                 try:
-                    self.publish(s, tick)
-                    tick = tick + 1
-                    time.sleep(self.tick_rate)
+                    stream.publish()
+                    stream.tick()
                 except (BrokenPipeError, OSError):
                     logger.info('Closing connection to {addr}'.format(addr=addr))
                     client.close()
