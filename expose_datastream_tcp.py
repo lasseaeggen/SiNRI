@@ -7,6 +7,7 @@ import logging
 import struct
 import json
 import traceback
+import keyboard
 
 
 # Set up a global (root) logger for now (yuck!). Fix this when things
@@ -80,9 +81,11 @@ class OfflineStream(object):
 
 
 class Server(object):
-    def __init__(self, port):
+    def __init__(self, port, auto_setup=False, sawtooth=False):
         self.host = '0.0.0.0'
         self.port = port
+        self.auto_setup = auto_setup
+        self.sawtooth = sawtooth
 
 
     def listen(self):
@@ -127,23 +130,34 @@ class Server(object):
 
 
     def handle_client(self, client, addr):
-        try:
-            settings_json = client.recv(2048)
-            settings = json.loads(settings_json.decode('utf-8'))
-        except (json.decoder.JSONDecodeError, KeyError) as e:
-            logger.info('Received malformed JSON from {addr}, disconnecting'.format(addr=addr))
-            return
+        if not self.auto_setup:
+            try:
+                settings_json = client.recv(2048)
+                settings = json.loads(settings_json.decode('utf-8'))
+            except (json.decoder.JSONDecodeError, KeyError) as e:
+                logger.info('Received malformed JSON from {addr}, disconnecting'.format(addr=addr))
+                return
 
-        try:
-            stream = OfflineStream(client, settings['channel'], settings['experiment'])
-        except KeyError as e:
-            logger.info('Received malformed settings from {addr}, disconnecting'.format(addr=addr))
-            stream.close()
-            return
+            try:
+                stream = OfflineStream(client, settings['channel'], settings['experiment'])
+            except KeyError as e:
+                logger.info('Received malformed settings from {addr}, disconnecting'.format(addr=addr))
+                stream.close()
+                return
+        else:
+            stream = OfflineStream(client, 0, 'default')
 
         while True:
             try:
-                stream.publish()
+                if self.sawtooth:
+                    i = stream.current_tick % 100
+                    if keyboard.is_pressed('y'):
+                        data = [i for x in range(100)]
+                    else:
+                        data = [0 for x in range(100)]
+                    client.send(struct.pack('{}f'.format(len(data)), *data))
+                else:
+                    stream.publish()
                 stream.tick()
             except (BrokenPipeError, OSError):
                 logger.info('Closing connection from {addr} (broken pipe)'.format(addr=addr))
@@ -225,7 +239,7 @@ class MEAMEr(object):
         """
         try:
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-                s.connect((self.address, self.sawtooth_port))
+                s.connect((self.address, self.mea_daq_port))
                 channel_data = [bytearray(b'') for x in range(60)]
                 segment_data = bytearray(b'')
                 current_channel = 0
@@ -278,7 +292,9 @@ def main(args):
         meame.recv(sample_rate=20000, segment_length=100)
     elif args.playback:
         try:
-            server = Server(8080)
+            server = Server(8080,
+                            auto_setup=args.auto_setup,
+                            sawtooth=args.sawtooth)
             server.listen()
         except Exception as e:
             logger.info('Unexpected event, shutting down gracefully')
@@ -291,6 +307,8 @@ if __name__ == '__main__':
 
     parser.add_argument('--live', help='Acquire live data from remote MEAME DAQ server', action='store_true')
     parser.add_argument('--playback', help='Replay and serve experiments from hd5 files', action='store_true')
+    parser.add_argument('--auto-setup', help='Serve playback directly without setup', action='store_true')
+    parser.add_argument('--sawtooth', help='Set server to auto generate sawtooth waves', action='store_true')
     parser.add_argument('--channel', help='Specify which of the MEA output channels is wanted')
 
     args = parser.parse_args()

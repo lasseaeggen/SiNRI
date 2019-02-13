@@ -18,7 +18,8 @@ logger.addHandler(handler)
 def receive_from_matlab():
     host = '0.0.0.0'
     port = 8081
-    threshold = 1e-5
+    mea_threshold = 1e-5
+    sawtooth_threshold = 2
 
     try:
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -34,7 +35,7 @@ def receive_from_matlab():
         while True:
             data = client.recv(1024)
             for i in struct.iter_unpack('<f', data):
-                if i[0] > threshold:
+                if i[0] > 5:
                     print('EPIC WIN', end='\r')
                 else:
                     print('        ', end='\r')
