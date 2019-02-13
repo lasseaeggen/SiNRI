@@ -35,7 +35,7 @@ def receive_from_matlab():
         while True:
             data = client.recv(1024)
             for i in struct.iter_unpack('<f', data):
-                if i[0] > 5:
+                if i[0] > mea_threshold:
                     print('EPIC WIN', end='\r')
                 else:
                     print('        ', end='\r')

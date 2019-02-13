@@ -33,7 +33,7 @@ class Experiment(object):
         return self.stream.get_channel_in_range(channel, 0, self.stream.channel_data.shape[1])
 
 
-class OfflineStream(object):
+class PlaybackStream(object):
     def __init__(self, client, channel, experiment='default'):
         self.client = client
         self.tick_rate = 0.01
@@ -46,10 +46,11 @@ class OfflineStream(object):
         self.change_channel(self.channel)
 
 
-    # For now each OfflineStream has a copy of the experiment that it
+    # For now each PlaybackStream has a copy of the experiment that it
     # will receive from Server, which may need to be re-done in the
     # future. For now we just choose one experiment on Server startup.
     def change_channel(self, ch):
+        self.channel = ch
         self.example_channel_data, self.unit = self.experiment.get_channel_data(ch)
         self.data_per_tick = int(self.experiment.sample_rate * self.tick_rate)
         self.current_tick = 0
@@ -78,6 +79,37 @@ class OfflineStream(object):
 
     def close(self):
         self.client.close()
+
+
+class LiveStream(object):
+    def __init__(self, client, channel):
+        self.client = client
+        self.channel = channel
+        self.meame = MEAMEr()
+        self.meame.initialize_DAQ(sample_rate=20000, segment_length=100)
+        self.meame.enable_DAQ_listener()
+
+
+    def change_channel(self, ch):
+        self.channel = ch
+
+
+    def publish(self):
+        """
+        Receive a whole segment for all channels, and forwards the
+        segment for the wanted channel to the client.
+        """
+        current_channel = 0
+
+        while True:
+            data = self.recv_segment()
+
+            if current_channel == self.channel:
+                print(data)
+
+            current_channel += 1
+            if current_channel == 60:
+                return
 
 
 class Server(object):
@@ -118,7 +150,7 @@ class Server(object):
         """
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             s.connect((addr, port))
-            stream = OfflineStream(s, ch)
+            stream = PlaybackStream(s, ch)
             while True:
                 try:
                     stream.publish()
@@ -129,24 +161,31 @@ class Server(object):
                     break
 
 
-    def handle_client(self, client, addr):
-        if not self.auto_setup:
+    def setup_playback_stream(self, client):
+        if self.auto_setup:
+            return PlaybackStream(client, 0, 'default')
+        else:
             try:
                 settings_json = client.recv(2048)
                 settings = json.loads(settings_json.decode('utf-8'))
             except (json.decoder.JSONDecodeError, KeyError) as e:
                 logger.info('Received malformed JSON from {addr}, disconnecting'.format(addr=addr))
-                return
+                return None
 
             try:
-                stream = OfflineStream(client, settings['channel'], settings['experiment'])
+                return PlaybackStream(client, settings['channel'], settings['experiment'])
             except KeyError as e:
                 logger.info('Received malformed settings from {addr}, disconnecting'.format(addr=addr))
                 stream.close()
-                return
-        else:
-            stream = OfflineStream(client, 0, 'default')
+                return None
 
+
+    def setup_live_stream(self, client):
+        return LiveStream(client, 0)
+
+
+    def handle_client(self, client, addr):
+        stream = self.setup_playback_stream(client)
         while True:
             try:
                 if self.sawtooth:
@@ -209,6 +248,10 @@ class MEAMEr(object):
                 logger.error('Could not start remote DAQ server')
                 return
 
+            # We succesfully set up the DAQ.
+            self.sample_rate = sample_rate
+            self.segment_length = segment_length
+
             # Sleep here to let the DAQ finish setting up. (TODO):
             # This should actually be done by just fetching
             # /DAQ/status.
@@ -233,9 +276,53 @@ class MEAMEr(object):
             self.connection_error(e)
 
 
-    def recv(self, sample_rate, segment_length):
+    def enable_DAQ_listener(self):
+        self.DAQ_listener = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.DAQ_listener.connect((self.address, self.mea_daq_port))
+
+
+    def disable_DAQ_listener(self):
+        self.DAQ_listener.close()
+
+
+    def recv_segment(self):
+        bytes_received = 0
+        bsegment_data = bytearray(b'')
+        segment_data = [0]*self.segment_length
+
+        while True:
+            data = self.DAQ_listener.recv(self.segment_length*4 - bytes_received)
+            bytes_received = bytes_received + len(data)
+            bsegment_data.extend(data)
+
+            if (bytes_received != self.segment_length*4):
+                continue
+
+            for i, dp in enumerate(struct.iter_unpack('<i', bsegment_data)):
+                segment_data[i] = dp
+
+            # We are only fetching a select amount of data, so break
+            # out when we're done.
+            break
+
+        return segment_data
+
+
+    def recv(self):
+        current_channel = 0
+        while True:
+            data = self.recv_segment()
+
+            if current_channel == 0:
+                print(data)
+
+            current_channel = (current_channel + 1) % 60
+
+
+    def _recv(self, sample_rate, segment_length):
         """
-        Receives actual data acquired on the remote DAQ server.
+        Receives actual data acquired on the remote DAQ server. Old
+        recv method, which is deprecated now.
         """
         try:
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
@@ -276,8 +363,8 @@ class MEAMEr(object):
                     # sawtooth wave.
                     if len(channel_data[0]) == (sample_rate * 4) * 1:
                         for i in struct.iter_unpack('<i', channel_data[50]):
-                            print(i)
-                        return
+                            pass
+                            # print(i)
         # (TODO): Fix this: Currently other exceptions will remain
         # uncaught for debugging purposes.
         except ConnectionError as e:
@@ -287,9 +374,10 @@ class MEAMEr(object):
 
 def main(args):
     if args.live:
-        meame = MEAMEr()
-        meame.initialize_DAQ(sample_rate=20000, segment_length=100)
-        meame.recv(sample_rate=20000, segment_length=100)
+        # meame = MEAMEr()
+        # meame.initialize_DAQ(sample_rate=20000, segment_length=100)
+        # meame.enable_DAQ_listener()
+        # meame.recv()
     elif args.playback:
         try:
             server = Server(8080,
