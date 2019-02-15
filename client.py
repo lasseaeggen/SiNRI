@@ -1,3 +1,4 @@
+from channelconverter import *
 import socket
 import struct
 import pyqtgraph as pg
@@ -77,7 +78,7 @@ def main():
         # Write JSON formatted settings to the remote stream server.
         s.send(json.dumps({
             'experiment': 'default',
-            'channel': 15,
+            'channel': mcsviz_to_channel[84],
         }).encode('utf-8'))
 
         while True:

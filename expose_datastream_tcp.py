@@ -1,3 +1,4 @@
+from channelconverter import *
 from McsPy import McsData
 import socket
 import threading
@@ -374,7 +375,7 @@ class MEAMEr(object):
 
 def main(args):
     if args.live:
-        # meame = MEAMEr()
+        meame = MEAMEr()
         # meame.initialize_DAQ(sample_rate=20000, segment_length=100)
         # meame.enable_DAQ_listener()
         # meame.recv()
