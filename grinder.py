@@ -1,7 +1,6 @@
 import log
 logger = log.setup_logger('grinder')
 
-
 import experiment
 import socket
 import threading
@@ -24,16 +23,16 @@ class PlaybackStream(object):
         if active_experiment == 'default':
             active_experiment = 'mea_data/1.h5'
         self.experiment = experiment.Experiment(active_experiment)
+        self.data_per_tick = int(self.experiment.sample_rate * self.tick_rate)
         self.change_channel(self.channel)
 
 
     # For now each PlaybackStream has a copy of the experiment that it
     # will receive from Server, which may need to be re-done in the
-    # future. For now we just choose one experiment on Server startup.
+    # future.
     def change_channel(self, ch):
         self.channel = ch
         self.example_channel_data, self.unit = self.experiment.get_channel_data(ch)
-        self.data_per_tick = int(self.experiment.sample_rate * self.tick_rate)
         self.current_tick = 0
 
 
@@ -45,7 +44,8 @@ class PlaybackStream(object):
 
 
     def get_tick_data(self):
-        return self.example_channel_data[self.current_tick*self.data_per_tick:(self.current_tick+1)*self.data_per_tick]
+        return self.example_channel_data[self.current_tick*self.data_per_tick
+                                         :(self.current_tick+1)*self.data_per_tick]
 
 
     def tick(self):
@@ -91,6 +91,12 @@ class LiveStream(object):
             current_channel += 1
             if current_channel == 60:
                 return
+
+
+    def close(self):
+        # (TODO): Should close connection that MEAME has in the future
+        # (I can't test now -- the DAQ is broken).
+        pass
 
 
 class Server(object):
@@ -192,6 +198,8 @@ class Server(object):
 
 
 class MEAMEr(object):
+    # (TODO): Move MEAMEr to own module, it has nothing to do with
+    # serving data, only fetching it. I can't now, the DAQ is down.
     def __init__(self):
         self.address = '10.20.92.130'
         self.mea_daq_port = 12340
