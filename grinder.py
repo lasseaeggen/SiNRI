@@ -1,5 +1,8 @@
-from channelconverter import *
-from McsPy import McsData
+import log
+logger = log.setup_logger('grinder')
+
+
+import experiment
 import socket
 import threading
 import time
@@ -11,39 +14,16 @@ import traceback
 import keyboard
 
 
-# Set up a global (root) logger for now (yuck!). Fix this when things
-# are split into modules.
-formatter = logging.Formatter(fmt='%(asctime)s - %(levelname)s - %(module)s - %(message)s')
-handler = logging.StreamHandler()
-handler.setFormatter(formatter)
-
-logger = logging.getLogger('grinder')
-logger.setLevel(logging.DEBUG)
-logger.addHandler(handler)
-
-
-class Experiment(object):
-    def __init__(self, h5_file):
-        self.data = McsData.RawData(h5_file)
-        self.stream = self.data.recordings[0].analog_streams[0]
-        self.sample_rate = self.stream.channel_infos[0].sampling_frequency.magnitude
-        self.channels = len(self.stream.channel_infos)
-
-
-    def get_channel_data(self, channel):
-        return self.stream.get_channel_in_range(channel, 0, self.stream.channel_data.shape[1])
-
-
 class PlaybackStream(object):
-    def __init__(self, client, channel, experiment='default'):
+    def __init__(self, client, channel, active_experiment='default'):
         self.client = client
         self.tick_rate = 0.01
         self.channel = channel
 
         # Initialize the actual experiment
-        if experiment == 'default':
-            experiment = 'mea_data/1.h5'
-        self.experiment = Experiment(experiment)
+        if active_experiment == 'default':
+            active_experiment = 'mea_data/1.h5'
+        self.experiment = experiment.Experiment(active_experiment)
         self.change_channel(self.channel)
 
 
