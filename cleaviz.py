@@ -31,6 +31,7 @@ def main():
             plots[i*cols+j].setYRange(-10**(-4), 10**(-4), padding=0)
             plots[i*cols+j].hideAxis('left')
             plots[i*cols+j].hideAxis('bottom')
+            plots[i*cols+j] = plots[i*cols+j].plot()
 
     # Create a callback for plot clicks to select a single channel.
     zoomed_plot = None
@@ -54,6 +55,7 @@ def main():
                     plots[i*cols+j].setYRange(-10**(-4), 10**(-4), padding=0)
                     plots[i*cols+j].hideAxis('left')
                     plots[i*cols+j].hideAxis('bottom')
+                    plots[i*cols+j] = plots[i*cols+j].plot()
         else:
             clicked_items = win.scene().items(event.scenePos())
             zoomed_plot = [x for x in clicked_items if isinstance(x, pg.PlotItem)][0]
@@ -105,7 +107,7 @@ def main():
 
             # Data to plot.
             y_axis_data = channel_data
-            # y_axis_data = list(scipy.signal.decimate(channel_data, 8))
+            y_axis_data = list(scipy.signal.decimate(channel_data, 8))
             x_axis_data = [x for x in range(len(y_axis_data))]
 
             # Plot the actual data every second (for now).
@@ -115,11 +117,12 @@ def main():
                     zoomed_plot.plot(x_axis_data, y_axis_data, clear=True)
                     pg.QtGui.QApplication.processEvents()
             else:
-                segment_counter = (segment_counter + 1) % 100
+                segment_counter = (segment_counter + 1) % 10
                 if segment_counter == 0:
                     for i in range(rows):
                         for j in range(cols):
-                            plots[i*cols+j].plot(x_axis_data, y_axis_data, clear=True)
+                            plots[i*cols+j].setData(x=x_axis_data, y=y_axis_data)
+
                     pg.QtGui.QApplication.processEvents()
 
             # Reset for next segment.

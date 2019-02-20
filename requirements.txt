@@ -2,3 +2,4 @@ h5py
 McsPyDataTools
 requests
 pyqtgraph
+keyboard
