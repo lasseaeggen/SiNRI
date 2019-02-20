@@ -2,6 +2,7 @@ import log
 logger = log.setup_logger('grinder')
 
 import experiment
+import meamer
 import socket
 import threading
 import time
@@ -118,7 +119,7 @@ class LiveStream(object):
     def __init__(self, client, channel):
         self.client = client
         self.channel = channel
-        self.meame = MEAMEr()
+        self.meame = meamer.MEAMEr()
         self.meame.initialize_DAQ(sample_rate=10000, segment_length=100)
         self.meame.enable_DAQ_listener()
 
@@ -155,10 +156,12 @@ class LiveStream(object):
 
 
 class Server(object):
-    def __init__(self, port, live=False, auto_setup=False, sawtooth=False):
+    live = False
+
+    def __init__(self, port, auto_setup=False, sawtooth=False):
         self.host = '0.0.0.0'
         self.port = port
-        self.live = live
+        self.live = Server.live
         self.auto_setup = auto_setup
         self.sawtooth = sawtooth
 
@@ -256,209 +259,26 @@ class Server(object):
                 break
 
 
-class MEAMEr(object):
-    mock = False
-
-    # (TODO): Move MEAMEr to own module, it has nothing to do with
-    # serving data, only fetching it. I can't now, the DAQ is down.
-    def __init__(self):
-        self.mock = MEAMEr.mock
-        self.data_format = '<f' if self.mock else '<i'
-        self.address = 'localhost' if self.mock else '10.20.92.130'
-        self.mea_daq_port = 12340 if self.mock else 12340
-        self.sawtooth_port = 12341
-        self.http_address = 'http://' + self.address
-        self.http_port = 8888
-
-
-    def url(self, resource):
-        return self.http_address + ':' + str(self.http_port) + resource
-
-
-    def connection_error(self, e):
-        logger.error('Could not connect to remote MEAME server')
-        logger.error('{e}'.format(e=e))
-
-
-    def initialize_DAQ(self, sample_rate, segment_length):
-        if self.mock:
-            self.sample_rate = sample_rate
-            self.segment_length = segment_length
-            return
-
-        try:
-            r = requests.post(self.url('/DAQ/connect'), json = {
-                'samplerate': sample_rate,
-                'segmentLength': segment_length,
-            })
-
-            if r.status_code == 200:
-                logger.info('Successfully set up MEAME DAQ server')
-            else:
-                logger.info('DAQ connection failed (malformed request?)')
-                return
-
-            r = requests.get(self.url('/DAQ/start'))
-            if r.status_code == 200:
-                logger.info('Successfully started DAQ server')
-            else:
-                logger.error('Could not start remote DAQ server')
-                return
-
-            # We succesfully set up the DAQ.
-            self.sample_rate = sample_rate
-            self.segment_length = segment_length
-
-            # Sleep here to let the DAQ finish setting up. (TODO):
-            # This should actually be done by just fetching
-            # /DAQ/status.
-            time.sleep(0.5)
-        except Exception as e:
-            self.connection_error(e)
-
-
-    def stop_DAQ(self):
-        """
-        Warning: stopping the DAQ server is not implemented in
-        MEAME. This method will in practice achieve nothing at all.
-        """
-        if self.mock:
-            return
-
-        try:
-            r = requests.get(self.url('/DAQ/stop'))
-            if r.status_code == 200:
-                logger.info('Successfully stopped DAQ server')
-            else:
-                logger.error('Could not stop remote DAQ server (status code 500)')
-                return
-        except Exception as e:
-            self.connection_error(e)
-
-
-    def enable_DAQ_listener(self):
-        self.DAQ_listener = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.DAQ_listener.connect((self.address, self.mea_daq_port))
-
-
-    def disable_DAQ_listener(self):
-        self.DAQ_listener.close()
-
-
-    def recv_segment(self):
-        bytes_received = 0
-        bsegment_data = bytearray(b'')
-        segment_data = [0]*self.segment_length
-
-        while True:
-            data = self.DAQ_listener.recv(self.segment_length*4 - bytes_received)
-            bytes_received = bytes_received + len(data)
-            bsegment_data.extend(data)
-
-            if (bytes_received != self.segment_length*4):
-                continue
-
-            for i, dp in enumerate(struct.iter_unpack(self.data_format, bsegment_data)):
-                segment_data[i] = dp[0]
-
-            # We are only fetching a select amount of data, so break
-            # out when we're done.
-            break
-
-        return segment_data
-
-
-    def recv(self):
-        current_channel = 0
-        while True:
-            data = self.recv_segment()
-
-            if current_channel == 0:
-                print(len(data))
-
-            current_channel = (current_channel + 1) % 60
-
-
-    def _recv(self, sample_rate, segment_length):
-        """
-        Receives actual data acquired on the remote DAQ server. Old
-        recv method, which is deprecated now.
-        """
-        try:
-            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-                s.connect((self.address, self.mea_daq_port))
-                channel_data = [bytearray(b'') for x in range(60)]
-                segment_data = bytearray(b'')
-                current_channel = 0
-                bytes_received = 0
-
-                segments = 0
-                while True:
-                    # Received data points are 32-bit signed integers.
-                    data = s.recv(segment_length*4 - bytes_received)
-                    bytes_received = bytes_received + len(data)
-                    segment_data.extend(data)
-
-                    if (bytes_received != segment_length*4):
-                        continue
-
-                    # Just for debugging purposes. Prints size of
-                    # buffers every second to see if data acquisition
-                    # is somewhat synchronized.
-                    if current_channel == 0:
-                        if segments == 0:
-                            print(len(channel_data[59]))
-                        segments = (segments + 1) % (sample_rate // segment_length)
-
-                    # Save the acquired data.
-                    channel_data[current_channel].extend(segment_data)
-
-                    # Reset for next channel.
-                    segment_data = bytearray(b'')
-                    current_channel = (current_channel + 1) % 60
-                    bytes_received = 0
-
-                    # After a second, unpack a channel and print it
-                    # out for debugging purposes to see whether it's a
-                    # sawtooth wave.
-                    if len(channel_data[0]) == (sample_rate * 4) * 1:
-                        for i in struct.iter_unpack('<i', channel_data[50]):
-                            pass
-                            # print(i)
-        # (TODO): Fix this: Currently other exceptions will remain
-        # uncaught for debugging purposes.
-        except ConnectionError as e:
-            logger.error('Could not listen to remote MEAME DAQ server (sawtooth)')
-            logger.error(e)
-
-
 def main(args):
+    # Static member of the MEAMEr class for now, we should perhaps
+    # refactor this into setting a complete configuration on startup
+    # instead.
     if args.connect_mock:
-        MEAMEr.mock = True
+        meamer.MEAMEr.mock = True
 
     if args.live:
-        try:
-            server = Server(8080,
-                            live=args.live,
-                            auto_setup=args.auto_setup,
-                            sawtooth=args.sawtooth)
-            server.listen()
-        except Exception as e:
-            logger.info('Unexpected event, shutting down gracefully')
-            server.socket.shutdown(socket.SHUT_RDWR)
-    elif args.playback:
-        try:
-            server = Server(8080,
-                            live=False,
-                            auto_setup=args.auto_setup,
-                            sawtooth=args.sawtooth)
-            server.listen()
-        except Exception as e:
-            logger.info('Unexpected event, shutting down gracefully')
-            server.socket.shutdown(socket.SHUT_RDWR)
-    elif args.meame:
+        Server.live = True
+
+    if args.meame:
         mock = MEAMEMock(12340)
         mock.run()
+    else:
+        try:
+            server = Server(8080, auto_setup=args.auto_setup, sawtooth=args.sawtooth)
+            server.listen()
+        except Exception as e:
+            logger.info('Unexpected event, shutting down gracefully')
+            server.socket.shutdown(socket.SHUT_RDWR)
 
 
 if __name__ == '__main__':
