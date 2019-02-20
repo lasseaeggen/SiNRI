@@ -13,6 +13,58 @@ import traceback
 import keyboard
 
 
+class MEAMEMock(object):
+    def __init__(self, port):
+        self.host = '0.0.0.0'
+        self.port = port
+        self.experiment = experiment.Experiment('mea_data/1.h5')
+        self.tick_rate = 0.01
+        self.ticks_per_sec = int(1 / self.tick_rate)
+        self.data_per_tick = int(self.experiment.sample_rate * self.tick_rate)
+        self.data = {}
+
+        # Only fetch a small amount of data that will be replayed. We
+        # are mostly just interesting in having something that mocks
+        # MEAME at all for testing purposes.
+        logger.info('Initializing MEAME mock by reading experiment data')
+        self.seconds = 15
+        self.playback_length = int(self.seconds * self.experiment.sample_rate)
+        for i in range(60):
+            logger.info('Channel {i} read'.format(i=i))
+            self.data[i] = self.experiment.get_channel_in_range(i, 0, self.playback_length)[0]
+
+
+    def run(self):
+        while True:
+            try:
+                self.listen()
+            except KeyboardInterrupt:
+                return
+
+
+    def listen(self):
+        logger.info('Setting up MEAME mock socket, awaiting connections')
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.bind((self.host, self.port))
+        s.listen(5)
+
+        client, addr = s.accept()
+        logger.info('Received connection from {addr}'.format(addr=addr))
+        tick = 0
+        try:
+            while True:
+                for i in range(60):
+                    data = self.data[i][tick*self.data_per_tick:(tick+1)*self.data_per_tick]
+                    client.send(struct.pack('{}f'.format(len(data)), *data))
+                tick = (tick + 1) % (self.seconds * self.ticks_per_sec)
+                time.sleep(self.tick_rate)
+        except (KeyboardInterrupt, SystemExit,
+                ConnectionResetError, BrokenPipeError):
+            client.close()
+            logger.info('Shutdown request detected, shutting down gracefully')
+            s.shutdown(socket.SHUT_RDWR)
+
+
 class PlaybackStream(object):
     def __init__(self, client, channel, active_experiment='default'):
         self.client = client
@@ -67,12 +119,16 @@ class LiveStream(object):
         self.client = client
         self.channel = channel
         self.meame = MEAMEr()
-        self.meame.initialize_DAQ(sample_rate=20000, segment_length=100)
+        self.meame.initialize_DAQ(sample_rate=10000, segment_length=100)
         self.meame.enable_DAQ_listener()
 
 
     def change_channel(self, ch):
         self.channel = ch
+
+
+    def tick(self):
+        return
 
 
     def publish(self):
@@ -83,10 +139,10 @@ class LiveStream(object):
         current_channel = 0
 
         while True:
-            data = self.recv_segment()
+            data = self.meame.recv_segment()
 
             if current_channel == self.channel:
-                print(data)
+                self.client.send(struct.pack('{}f'.format(len(data)), *data))
 
             current_channel += 1
             if current_channel == 60:
@@ -94,15 +150,15 @@ class LiveStream(object):
 
 
     def close(self):
-        # (TODO): Should close connection that MEAME has in the future
-        # (I can't test now -- the DAQ is broken).
-        pass
+        self.client.close()
+        self.meame.disable_DAQ_listener()
 
 
 class Server(object):
-    def __init__(self, port, auto_setup=False, sawtooth=False):
+    def __init__(self, port, live=False, auto_setup=False, sawtooth=False):
         self.host = '0.0.0.0'
         self.port = port
+        self.live = live
         self.auto_setup = auto_setup
         self.sawtooth = sawtooth
 
@@ -172,7 +228,10 @@ class Server(object):
 
 
     def handle_client(self, client, addr):
-        stream = self.setup_playback_stream(client)
+        if self.live:
+            stream = self.setup_live_stream(client)
+        else:
+            stream = self.setup_playback_stream(client)
         while True:
             try:
                 if self.sawtooth:
@@ -198,11 +257,15 @@ class Server(object):
 
 
 class MEAMEr(object):
+    mock = False
+
     # (TODO): Move MEAMEr to own module, it has nothing to do with
     # serving data, only fetching it. I can't now, the DAQ is down.
     def __init__(self):
-        self.address = '10.20.92.130'
-        self.mea_daq_port = 12340
+        self.mock = MEAMEr.mock
+        self.data_format = '<f' if self.mock else '<i'
+        self.address = 'localhost' if self.mock else '10.20.92.130'
+        self.mea_daq_port = 12340 if self.mock else 12340
         self.sawtooth_port = 12341
         self.http_address = 'http://' + self.address
         self.http_port = 8888
@@ -218,6 +281,11 @@ class MEAMEr(object):
 
 
     def initialize_DAQ(self, sample_rate, segment_length):
+        if self.mock:
+            self.sample_rate = sample_rate
+            self.segment_length = segment_length
+            return
+
         try:
             r = requests.post(self.url('/DAQ/connect'), json = {
                 'samplerate': sample_rate,
@@ -254,6 +322,9 @@ class MEAMEr(object):
         Warning: stopping the DAQ server is not implemented in
         MEAME. This method will in practice achieve nothing at all.
         """
+        if self.mock:
+            return
+
         try:
             r = requests.get(self.url('/DAQ/stop'))
             if r.status_code == 200:
@@ -287,8 +358,8 @@ class MEAMEr(object):
             if (bytes_received != self.segment_length*4):
                 continue
 
-            for i, dp in enumerate(struct.iter_unpack('<i', bsegment_data)):
-                segment_data[i] = dp
+            for i, dp in enumerate(struct.iter_unpack(self.data_format, bsegment_data)):
+                segment_data[i] = dp[0]
 
             # We are only fetching a select amount of data, so break
             # out when we're done.
@@ -303,7 +374,7 @@ class MEAMEr(object):
             data = self.recv_segment()
 
             if current_channel == 0:
-                print(data)
+                print(len(data))
 
             current_channel = (current_channel + 1) % 60
 
@@ -362,20 +433,32 @@ class MEAMEr(object):
 
 
 def main(args):
+    if args.connect_mock:
+        MEAMEr.mock = True
+
     if args.live:
-        meame = MEAMEr()
-        # meame.initialize_DAQ(sample_rate=20000, segment_length=100)
-        # meame.enable_DAQ_listener()
-        # meame.recv()
-    elif args.playback:
         try:
             server = Server(8080,
+                            live=args.live,
                             auto_setup=args.auto_setup,
                             sawtooth=args.sawtooth)
             server.listen()
         except Exception as e:
             logger.info('Unexpected event, shutting down gracefully')
             server.socket.shutdown(socket.SHUT_RDWR)
+    elif args.playback:
+        try:
+            server = Server(8080,
+                            live=False,
+                            auto_setup=args.auto_setup,
+                            sawtooth=args.sawtooth)
+            server.listen()
+        except Exception as e:
+            logger.info('Unexpected event, shutting down gracefully')
+            server.socket.shutdown(socket.SHUT_RDWR)
+    elif args.meame:
+        mock = MEAMEMock(12340)
+        mock.run()
 
 
 if __name__ == '__main__':
@@ -384,9 +467,11 @@ if __name__ == '__main__':
 
     parser.add_argument('--live', help='Acquire live data from remote MEAME DAQ server', action='store_true')
     parser.add_argument('--playback', help='Replay and serve experiments from hd5 files', action='store_true')
+    parser.add_argument('--meame', help='Take the place of MEAME, sending mock data', action='store_true')
     parser.add_argument('--auto-setup', help='Serve playback directly without setup', action='store_true')
     parser.add_argument('--sawtooth', help='Set server to auto generate sawtooth waves', action='store_true')
     parser.add_argument('--channel', help='Specify which of the MEA output channels is wanted')
+    parser.add_argument('--connect-mock', help='Connect to a mock DAQ server, no setup possible', action='store_true')
 
     args = parser.parse_args()
     main(args)

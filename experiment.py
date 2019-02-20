@@ -18,3 +18,7 @@ class Experiment(object):
 
     def get_channel_data(self, channel):
         return self.stream.get_channel_in_range(channel, 0, self.stream.channel_data.shape[1])
+
+
+    def get_channel_in_range(self, channel, i, j):
+        return self.stream.get_channel_in_range(channel, i, j)
