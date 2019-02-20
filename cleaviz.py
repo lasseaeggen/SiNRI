@@ -149,9 +149,8 @@ def main():
             # Data to plot.
             x_axis_data = [x for x in range(len(channel_data[0]))]
 
-            # Plot the actual data every second (for now).
             if zoomed_plot:
-                segment_counter = (segment_counter + 1) % 5
+                segment_counter = (segment_counter + 1) % 10
                 if segment_counter == 0:
                     zoomed_plot.plot(x_axis_data, channel_data[zoomed_plot_num], clear=True)
                     pg.QtGui.QApplication.processEvents()
