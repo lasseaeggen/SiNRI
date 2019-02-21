@@ -39,6 +39,7 @@ def main():
 
     # Create a callback for plot clicks to select a single channel.
     zoomed_plot = None
+    zoomed_plot_num = None
     def on_click(event):
         # Ignore clicks that are not left-clicks.
         if event.button() != 1:
@@ -46,6 +47,7 @@ def main():
 
         nonlocal plots
         nonlocal zoomed_plot
+        nonlocal zoomed_plot_num
 
         if zoomed_plot:
             zoomed_plot = None
@@ -65,6 +67,9 @@ def main():
             zoomed_plot = [x for x in clicked_items if isinstance(x, pg.PlotItem)][0]
             x_axis = zoomed_plot.items[0].xData
             y_axis = zoomed_plot.items[0].yData
+            for i, plot in enumerate(plots):
+                if np.array_equal(zoomed_plot.items[0].yData, plot.yData):
+                    zoomed_plot_num = i
 
             # Add a new, singular plot to the window (zoomed in).
             win.clear()
@@ -131,7 +136,7 @@ def main():
             if zoomed_plot:
                 segment_counter = (segment_counter + 1) % 5
                 if segment_counter == 0:
-                    zoomed_plot.plot(x_axis_data, channel_data[0], clear=True)
+                    zoomed_plot.plot(x_axis_data, channel_data[zoomed_plot_num], clear=True)
                     pg.QtGui.QApplication.processEvents()
             else:
                 segment_counter = (segment_counter + 1) % 10
