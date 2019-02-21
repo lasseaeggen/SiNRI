@@ -1,6 +1,7 @@
 import log
 logger = log.setup_logger('grinder')
 
+import channelconverter as chconv
 import experiment
 import meamer
 import socket
@@ -120,7 +121,7 @@ class LiveStream(object):
         self.client = client
         self.channel = channel
         self.meame = meamer.MEAMEr()
-        self.meame.initialize_DAQ(sample_rate=10000, segment_length=100)
+        self.meame.initialize_DAQ(sample_rate=10000, segment_length=2000)
         self.meame.enable_DAQ_listener()
 
 
@@ -227,7 +228,8 @@ class Server(object):
 
 
     def setup_live_stream(self, client):
-        return LiveStream(client, 0)
+        channel = chconv.MCSChannelConverter.mcsviz_to_channel[22]
+        return LiveStream(client, channel)
 
 
     def handle_client(self, client, addr):
