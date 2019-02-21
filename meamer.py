@@ -1,5 +1,10 @@
+import logging
+logger = logging.getLogger('grinder')
+
 import socket
 import struct
+import requests
+import time
 
 
 class MEAMEr(object):
@@ -10,6 +15,7 @@ class MEAMEr(object):
     def __init__(self):
         self.mock = MEAMEr.mock
         self.data_format = '<f' if self.mock else '<i'
+        self.conversion_constant = 5.9605e-08
         self.address = 'localhost' if self.mock else '10.20.92.130'
         self.mea_daq_port = 12340 if self.mock else 12340
         self.sawtooth_port = 12341
@@ -24,6 +30,18 @@ class MEAMEr(object):
     def connection_error(self, e):
         logger.error('Could not connect to remote MEAME server')
         logger.error('{e}'.format(e=e))
+
+
+    def init_DSP_replay(self):
+        try:
+            r = requests.get(self.url('/DSP/replay'))
+            if r.status_code == 200:
+                logger.info('Successfully ran DSP replay on remote MEAME server')
+            else:
+                logger.error('Could not run DSP replay on MEAME server (check logs)')
+                return
+        except Exception as e:
+            self.connection_error(e)
 
 
     def initialize_DAQ(self, sample_rate, segment_length):
@@ -105,7 +123,7 @@ class MEAMEr(object):
                 continue
 
             for i, dp in enumerate(struct.iter_unpack(self.data_format, bsegment_data)):
-                segment_data[i] = dp[0]
+                segment_data[i] = dp[0] * self.conversion_constant
 
             # We are only fetching a select amount of data, so break
             # out when we're done.
