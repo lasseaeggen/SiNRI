@@ -8,6 +8,47 @@ import json
 import numpy as np
 
 
+def mcs_lookup(row, col):
+    lookup = int(str(row) + str(col))
+    if lookup in chconv.MCSChannelConverter.mcsviz_to_channel:
+        return chconv.MCSChannelConverter.mcsviz_to_channel[lookup]
+    else:
+        return -1
+
+
+def downsample(x, ds):
+    n = len(x) // ds
+    new1 = np.empty((n, 2))
+    new2 = np.array(x[:n*ds]).reshape((n, ds))
+    new1[:, 0] = new2.max(axis=1)
+    new1[:, 1] = new2.min(axis=1)
+    x = new1.reshape(n*2)
+    return x
+
+
+def init_playback(s):
+    s.send(json.dumps({
+        'experiment': 'default',
+        'channel': chconv.MCSChannelConverter.mcsviz_to_channel[12],
+    }).encode('utf-8'))
+
+
+def init_plots(win, rows, cols):
+    plots = [None] * 60
+    for i in range(rows):
+        for j in range(cols):
+            # Special cases for edges that should be empty.
+            if (i, j) in [(0, 0), (0, 7), (7, 0), (7, 7)]:
+                continue
+            channel = mcs_lookup(i+1, j+1)
+            plots[channel] = (win.addPlot(row=i, col=j))
+            plots[channel].setYRange(-10**(-4), 10**(-4), padding=0)
+            plots[channel].hideAxis('left')
+            plots[channel].hideAxis('bottom')
+            plots[channel] = plots[channel].plot()
+    return plots
+
+
 def main():
     # Hard code these for now, use argparse maybe later? We are just
     # testing that we are receiving something at all, really.
@@ -26,16 +67,9 @@ def main():
     win = pg.GraphicsWindow()
     win.setFixedSize(1200, 800)
 
-    rows = 6
-    cols = 10
-    plots = []
-    for i in range(rows):
-        for j in range(cols):
-            plots.append(win.addPlot(row=i, col=j))
-            plots[i*cols+j].setYRange(-10**(-4), 10**(-4), padding=0)
-            plots[i*cols+j].hideAxis('left')
-            plots[i*cols+j].hideAxis('bottom')
-            plots[i*cols+j] = plots[i*cols+j].plot()
+    rows = 8
+    cols = 8
+    plots = init_plots(win, rows, cols)
 
     # Create a callback for plot clicks to select a single channel.
     zoomed_plot = None
@@ -54,14 +88,7 @@ def main():
 
             # Go back to plotting all channels.
             win.clear()
-            plots = []
-            for i in range(rows):
-                for j in range(cols):
-                    plots.append(win.addPlot(row=i, col=j))
-                    plots[i*cols+j].setYRange(-10**(-4), 10**(-4), padding=0)
-                    plots[i*cols+j].hideAxis('left')
-                    plots[i*cols+j].hideAxis('bottom')
-                    plots[i*cols+j] = plots[i*cols+j].plot()
+            plots = init_plots(win, rows, cols)
         else:
             clicked_items = win.scene().items(event.scenePos())
             zoomed_plot = [x for x in clicked_items if isinstance(x, pg.PlotItem)][0]
@@ -87,10 +114,7 @@ def main():
         bytes_received = 0
 
         # Write JSON formatted settings to the remote stream server.
-        # s.send(json.dumps({
-        #     'experiment': 'default',
-        #     'channel': chconv.MCSChannelConverter.mcsviz_to_channel[12],
-        # }).encode('utf-8'))
+        # init_playback(s)
 
         while True:
             current_channel = 0
@@ -107,14 +131,7 @@ def main():
                 new_channel_data = []
                 for i in struct.iter_unpack('f', segment_data):
                     new_channel_data.append(i[0])
-                # TESTING DECIMATION
-                ds = 20
-                n = len(new_channel_data) // ds
-                new1 = np.empty((n, 2))
-                new2 = np.array(new_channel_data[:n*ds]).reshape((n, ds))
-                new1[:, 0] = new2.max(axis=1)
-                new1[:, 1] = new2.min(axis=1)
-                new_channel_data = new1.reshape(n*2)
+                new_channel_data = downsample(new_channel_data, 20)
 
                 channel_data[current_channel].extend(new_channel_data)
                 channel_data[current_channel] = channel_data[current_channel][-data_in_window:]
@@ -143,7 +160,9 @@ def main():
                 if segment_counter == 0:
                     for i in range(rows):
                         for j in range(cols):
-                            plots[i*cols+j].setData(x=x_axis_data, y=channel_data[i*cols+j])
+                            channel = mcs_lookup(i+1, j+1)
+                            if channel != -1:
+                                plots[channel].setData(x=x_axis_data, y=channel_data[channel])
 
                     pg.QtGui.QApplication.processEvents()
 
