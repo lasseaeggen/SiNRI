@@ -1,5 +1,5 @@
 import log
-logger = log.setup_logger('grinder')
+logger = log.get_logger(__name__)
 
 import meamer
 

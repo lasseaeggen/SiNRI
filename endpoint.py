@@ -1,18 +1,10 @@
+import log
+logger = log.get_logger(__name__)
+
 import socket
 import logging
 import traceback
 import struct
-
-
-# Set up a global (root) logger for now (yuck!). Fix this when things
-# are split into modules.
-formatter = logging.Formatter(fmt='%(asctime)s - %(levelname)s - %(module)s - %(message)s')
-handler = logging.StreamHandler()
-handler.setFormatter(formatter)
-
-logger = logging.getLogger('grinder')
-logger.setLevel(logging.DEBUG)
-logger.addHandler(handler)
 
 
 def receive_from_matlab():

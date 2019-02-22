@@ -1,5 +1,5 @@
 import log
-logger = log.setup_logger('grinder')
+logger = log.get_logger(__name__)
 
 import channelconverter as chconv
 import experiment
@@ -8,7 +8,6 @@ import socket
 import threading
 import time
 import requests
-import logging
 import struct
 import json
 import traceback

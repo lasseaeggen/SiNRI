@@ -1,5 +1,5 @@
-import logging
-logger = logging.getLogger('grinder')
+import log
+logger = log.get_logger(__name__)
 
 from McsPy import McsData
 import McsPy
