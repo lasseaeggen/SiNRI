@@ -45,7 +45,7 @@ def init_plots(win, rows, cols):
             plots[channel].setYRange(-10**(-4), 10**(-4), padding=0)
             plots[channel].hideAxis('left')
             plots[channel].hideAxis('bottom')
-            plots[channel] = plots[channel].plot()
+            plots[channel] = plots[channel].plot(pen=pg.mkPen('#EB9904'), clear=True)
     return plots
 
 
@@ -65,6 +65,7 @@ def main():
     # Plot the received data in real time.
     app = pg.QtGui.QApplication([])
     win = pg.GraphicsWindow()
+    win.setBackground("#353535")
     win.setFixedSize(1200, 800)
 
     rows = 8
@@ -101,7 +102,7 @@ def main():
             # Add a new, singular plot to the window (zoomed in).
             win.clear()
             zoomed_plot = win.addPlot()
-            zoomed_plot.plot(x_axis, y_axis, clear=True)
+            zoomed_plot.plot(x_axis, y_axis, pen=pg.mkPen('#EB9904'), clear=True)
             zoomed_plot.setYRange(-10**(-4), 10**(-4), padding=0)
     win.scene().sigMouseClicked.connect(on_click)
 
@@ -152,7 +153,8 @@ def main():
             if zoomed_plot:
                 segment_counter = (segment_counter + 1) % 10
                 if segment_counter == 0:
-                    zoomed_plot.plot(x_axis_data, channel_data[zoomed_plot_num], clear=True)
+                    zoomed_plot.plot(x_axis_data, channel_data[zoomed_plot_num],
+                                     pen=pg.mkPen('#EB9904'), clear=True)
                     pg.QtGui.QApplication.processEvents()
             else:
                 segment_counter = (segment_counter + 1) % 10
