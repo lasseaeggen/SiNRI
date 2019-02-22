@@ -32,16 +32,28 @@ class MEAMEr(object):
         logger.error('{e}'.format(e=e))
 
 
-    def init_DSP_replay(self):
+    def simple_GET_request(self, url):
         try:
-            r = requests.get(self.url('/DSP/replay'))
+            r = requests.get(self.url(url))
             if r.status_code == 200:
-                logger.info('Successfully ran DSP replay on remote MEAME server')
+                logger.info('Successful GET request to {url}'.format(url=url))
             else:
-                logger.error('Could not run DSP replay on MEAME server (check logs)')
+                logger.error('Error, GET request to {url} (check MEAME logs)'.format(url=url))
                 return
         except Exception as e:
             self.connection_error(e)
+
+
+    def setup_stim(self):
+        self.simple_GET_request('/DSP/stim/setup')
+
+
+    def enable_stim(self):
+        self.simple_GET_request('/DSP/stim/start')
+
+
+    def disable_stim(self):
+        self.simple_GET_request('/DSP/stim/stop')
 
 
     def initialize_DAQ(self, sample_rate, segment_length):
