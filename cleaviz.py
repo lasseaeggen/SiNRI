@@ -1,5 +1,5 @@
 import log
-logger = log.setup_logger('cleaviz')
+logger = log.setup_logger('grinder')
 
 import channelconverter as chconv
 import socket
@@ -85,12 +85,11 @@ def main():
     # Hard code these for now, use argparse maybe later? We are just
     # testing that we are receiving something at all, really.
     address = 'localhost'
-    port = 12340
+    port = 8080
 
     # sample_rate * tick_rate, hard coded for now.
     sample_rate = 10000
-    tick_rate = 0.01
-    data_per_tick = int(sample_rate * tick_rate)
+    segment_length = 1000
     seconds = 3
     data_in_window = sample_rate*seconds // 10
 
@@ -155,11 +154,11 @@ def main():
             current_channel = 0
             while current_channel < 60:
                 # We are receiving 4-byte floats.
-                data = s.recv(data_per_tick*4 - bytes_received)
+                data = s.recv(segment_length*4 - bytes_received)
                 bytes_received = bytes_received + len(data)
                 segment_data.extend(data)
 
-                if (bytes_received != data_per_tick*4):
+                if (bytes_received != segment_length*4):
                     continue
 
                 # Print the received segment data.
@@ -179,14 +178,13 @@ def main():
             # Data to plot.
             x_axis_data = [x for x in range(len(channel_data[0]))]
 
+            segment_counter = (segment_counter + 1) % (1000 // segment_length)
             if zoomed_plot:
-                segment_counter = (segment_counter + 1) % 10
                 if segment_counter == 0:
                     zoomed_plot.plot(x_axis_data, channel_data[zoomed_plot_num],
                                      pen=pg.mkPen('#EB9904'), clear=True)
                     pg.QtGui.QApplication.processEvents()
             else:
-                segment_counter = (segment_counter + 1) % 10
                 if segment_counter == 0:
                     for i in range(rows):
                         for j in range(cols):

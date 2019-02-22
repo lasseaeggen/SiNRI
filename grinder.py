@@ -121,7 +121,7 @@ class LiveStream(object):
         self.client = client
         self.channel = channel
         self.meame = meamer.MEAMEr()
-        self.meame.initialize_DAQ(sample_rate=10000, segment_length=2000)
+        self.meame.initialize_DAQ(sample_rate=10000, segment_length=1000)
         self.meame.enable_DAQ_listener()
 
 
@@ -142,9 +142,7 @@ class LiveStream(object):
 
         while True:
             data = self.meame.recv_segment()
-
-            if current_channel == self.channel:
-                self.client.send(struct.pack('{}f'.format(len(data)), *data))
+            self.client.send(struct.pack('{}f'.format(len(data)), *data))
 
             current_channel += 1
             if current_channel == 60:
