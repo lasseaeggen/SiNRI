@@ -56,6 +56,10 @@ class MEAMEr(object):
         self.simple_GET_request('/DSP/stim/stop')
 
 
+    def flash_dsp(self):
+        self.simple_GET_request('/DSP/flash')
+
+
     def initialize_DAQ(self, sample_rate, segment_length):
         if self.mock:
             self.sample_rate = sample_rate
