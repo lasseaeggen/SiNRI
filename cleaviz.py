@@ -1,3 +1,6 @@
+import log
+logger = log.setup_logger('cleaviz')
+
 import channelconverter as chconv
 import socket
 import struct
@@ -6,6 +9,35 @@ import scipy.signal
 import datetime
 import json
 import numpy as np
+import threading
+import time
+import fcntl, termios, array
+
+
+# Some important info for the visualizer is how the TCP buffers
+# work. /proc/sys/net will give info about e.g. the maximum amount of
+# buffered data in a TCP buffer, before you will start losing data. It
+# is not suggested to increase the size for our purpose, but rather
+# make sure that we are not completely filling buffers by drawing fast
+# enough. If we are lagging too far behind the data we are receiving
+# (FIONREAD is used to determine this), we should start warning so
+# that parameters may be tuned.
+
+
+def sync_watchdog(s, sample_rate):
+    # Used to see how much data is ready to be read in from the socket
+    # (to see if we are lagging behind).
+    sock_size = array.array('i', [0])
+
+    # After every segment, check if we still have data to be
+    # received -- this signifies that we are not keeping up
+    # with the data stream.
+    while True:
+        fcntl.ioctl(s, termios.FIONREAD, sock_size)
+        if (sock_size[0] // 4 >= 20*sample_rate):
+            logger.info('{s} data available in TCP socket'.format(s=sock_size[0]))
+            logger.info('Cleaviz is struggling to keep up with the data rate')
+        time.sleep(1)
 
 
 def mcs_lookup(row, col):
@@ -107,7 +139,6 @@ def main():
     win.scene().sigMouseClicked.connect(on_click)
 
     segment_counter = 0
-    timer_counter = 0
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         s.connect((address, port))
         channel_data = {n: [] for n in range(60)}
@@ -116,6 +147,9 @@ def main():
 
         # Write JSON formatted settings to the remote stream server.
         # init_playback(s)
+
+        # Are we struggling to keep up with the data stream?.
+        threading.Thread(target=sync_watchdog, args=([s, sample_rate])).start()
 
         while True:
             current_channel = 0
@@ -141,11 +175,6 @@ def main():
                 segment_data = bytearray(b'')
                 bytes_received = 0
                 current_channel += 1
-
-            # For the purpose of debugging of timing.
-            timer_counter = (timer_counter + 1) % (sample_rate // data_per_tick)
-            if timer_counter == 0:
-                print(datetime.datetime.now())
 
             # Data to plot.
             x_axis_data = [x for x in range(len(channel_data[0]))]
