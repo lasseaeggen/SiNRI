@@ -10,11 +10,13 @@ def main(args):
     if args.setup:
         meame.setup_stim()
     if args.start:
-        meame.enable_stim()
+        meame.start_stim()
     elif args.stop:
-        meame.disable_stim()
+        meame.stop_stim()
     elif args.flash:
         meame.flash_dsp()
+    elif args.debug:
+        meame.debug_dsp()
 
 
 if __name__ == '__main__':
@@ -25,6 +27,7 @@ if __name__ == '__main__':
     parser.add_argument('--start', help='Start MEA stimuli', action='store_true')
     parser.add_argument('--stop', help='Stop MEA stimuli', action='store_true')
     parser.add_argument('--flash', help='Flash DSP, should be done after power cycle', action='store_true')
+    parser.add_argument('--debug', help='Send debug request to MEAME, prints in MEAME console', action='store_true')
 
     args = parser.parse_args()
     main(args)

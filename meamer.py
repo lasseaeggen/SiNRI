@@ -48,16 +48,20 @@ class MEAMEr(object):
         self.simple_GET_request('/DSP/stim/setup')
 
 
-    def enable_stim(self):
+    def start_stim(self):
         self.simple_GET_request('/DSP/stim/start')
 
 
-    def disable_stim(self):
+    def stop_stim(self):
         self.simple_GET_request('/DSP/stim/stop')
 
 
     def flash_dsp(self):
         self.simple_GET_request('/DSP/flash')
+
+
+    def debug_dsp(self):
+        self.simple_GET_request('/DSP/stim/debug')
 
 
     def initialize_DAQ(self, sample_rate, segment_length):
