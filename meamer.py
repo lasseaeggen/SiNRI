@@ -15,7 +15,7 @@ class MEAMEr(object):
     def __init__(self):
         self.mock = MEAMEr.mock
         self.data_format = '<f' if self.mock else '<i'
-        self.conversion_constant = 5.9605e-08
+        self.conversion_constant = 5.9605e-08 if not self.mock else 1
         self.address = 'localhost' if self.mock else '10.20.92.130'
         self.mea_daq_port = 12340 if self.mock else 12340
         self.sawtooth_port = 12341
