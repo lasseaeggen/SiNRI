@@ -67,10 +67,12 @@ class MEAMEMock(object):
 
 
 class PlaybackStream(object):
-    def __init__(self, client, channel, active_experiment='default'):
+    def __init__(self, client, channel, segment_length=100, active_experiment='default'):
         self.client = client
         self.tick_rate = 0.01
         self.channel = channel
+        self.segment_length = segment_length
+        self.available_ticks = 0
 
         # Initialize the actual experiment
         if active_experiment == 'default':
@@ -85,8 +87,6 @@ class PlaybackStream(object):
     # future.
     def change_channel(self, ch):
         self.channel = ch
-        self.example_channel_data, self.unit = self.experiment.get_channel_data(ch)
-        self.current_tick = 0
 
 
     def load_settings(self, settings):
@@ -97,18 +97,25 @@ class PlaybackStream(object):
 
 
     def get_tick_data(self):
-        return self.example_channel_data[self.current_tick*self.data_per_tick
-                                         :(self.current_tick+1)*self.data_per_tick]
+        self.data = self.experiment.get_tick_data()
+        self.available_ticks = len(self.data[0]) // self.segment_length
+        self.data_tick_length = self.available_ticks
 
 
     def tick(self):
-        self.current_tick = self.current_tick + 1
+        self.available_ticks -= 1
         time.sleep(self.tick_rate)
 
 
     def publish(self):
-        data = self.get_tick_data()
-        self.client.send(struct.pack('{}f'.format(len(data)), *data))
+        if self.available_ticks == 0:
+            self.get_tick_data()
+
+        start = (self.data_tick_length - self.available_ticks) * self.segment_length
+        stop = start + self.segment_length
+        for ch in range(60):
+            data = self.data[ch][start:stop]
+            self.client.send(struct.pack('{}f'.format(len(data)), *data))
 
 
     def close(self):
@@ -207,7 +214,7 @@ class Server(object):
 
     def setup_playback_stream(self, client):
         if self.auto_setup:
-            return PlaybackStream(client, 0, 'default')
+            return PlaybackStream(client, 0, segment_length=100, active_experiment='default')
         else:
             try:
                 settings_json = client.recv(2048)
@@ -217,7 +224,8 @@ class Server(object):
                 return None
 
             try:
-                return PlaybackStream(client, settings['channel'], settings['experiment'])
+                return PlaybackStream(client, settings['channel'], segment_length=100,
+                                      active_experiment=settings['experiment'])
             except KeyError as e:
                 logger.info('Received malformed settings from {addr}, disconnecting'.format(addr=addr))
                 stream.close()
