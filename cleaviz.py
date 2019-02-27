@@ -167,9 +167,10 @@ class CleavizWindow(pg.GraphicsWindow):
             # Are we struggling to keep up with the data stream?.
             threading.Thread(target=sync_watchdog, args=([self.s, self.sample_rate])).start()
 
+            segment_mod = (1000 // self.segment_length - 0)
             while True:
                 self.recv_segment()
-                segment_counter = (segment_counter + 1) % (1000 // self.segment_length - 0)
+                segment_counter = (segment_counter + 1) % segment_mod
                 if segment_counter == 0:
                     self.update_plots()
 
