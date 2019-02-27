@@ -67,7 +67,7 @@ def init_plots(win, rows, cols):
             if (i, j) in [(0, 0), (0, 7), (7, 0), (7, 7)]:
                 continue
             channel = mcs_lookup(i+1, j+1)
-            plots[channel] = (win.addPlot(row=i, col=j))
+            plots[channel] = win.addPlot(row=i, col=j)
             plots[channel].setYRange(-win.current_yrange, win.current_yrange, padding=0)
             plots[channel].hideAxis('left')
             plots[channel].hideAxis('bottom')
@@ -109,6 +109,8 @@ class CleavizWindow(pg.GraphicsWindow):
         self.scene().sigMouseClicked.connect(self.on_click)
         self.keyPressEvent = self.on_key_press
 
+        self.x_axis_data = np.arange(self.data_in_window)
+
 
     def recv_segment(self):
         bytes_received = 0
@@ -118,29 +120,29 @@ class CleavizWindow(pg.GraphicsWindow):
             # We are receiving 4-byte floats.
             data = self.s.recv(self.segment_length*4 - bytes_received)
             bytes_received = bytes_received + len(data)
-            segment_data.extend(data)
+            segment_data = np.append(segment_data, data)
 
             if (bytes_received != self.segment_length*4):
                 continue
 
             # Print the received segment data.
             new_channel_data = []
+
             for i in struct.iter_unpack('f', segment_data):
                 new_channel_data.append(i[0])
             new_channel_data = downsample(new_channel_data, 20)
 
-            self.channel_data[current_channel].extend(new_channel_data)
+            self.channel_data[current_channel] = np.append(self.channel_data[current_channel], new_channel_data)
             self.channel_data[current_channel] = self.channel_data[current_channel][-self.data_in_window:]
 
             # Reset for next segment.
             segment_data = bytearray(b'')
             bytes_received = 0
-            current_channel += 1
 
 
     def update_plots(self):
         # Data to plot.
-        x_axis_data = [x for x in range(len(self.channel_data[0]))]
+        x_axis_data = self.x_axis_data[:len(self.channel_data[0])]
 
         if self.zoomed_plot:
             self.zoomed_plot.plot(x_axis_data, self.channel_data[self.zoomed_plot_num],
@@ -156,7 +158,7 @@ class CleavizWindow(pg.GraphicsWindow):
 
 
     def run(self):
-        self.channel_data = {n: [] for n in range(60)}
+        self.channel_data = {n: np.array([]) for n in range(60)}
         segment_counter = 0
 
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as self.s:
@@ -167,7 +169,7 @@ class CleavizWindow(pg.GraphicsWindow):
 
             while True:
                 self.recv_segment()
-                segment_counter = (segment_counter + 1) % (1000 // self.segment_length + 3)
+                segment_counter = (segment_counter + 1) % (1000 // self.segment_length - 0)
                 if segment_counter == 0:
                     self.update_plots()
 

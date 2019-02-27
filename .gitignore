@@ -1,3 +1,4 @@
 profile.txt
 __pycache__/
 .idea/
+*.prof
