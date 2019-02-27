@@ -111,11 +111,10 @@ class CleavizWindow(pg.GraphicsWindow):
 
 
     def recv_segment(self):
-        current_channel = 0
         bytes_received = 0
         segment_data = bytearray(b'')
 
-        while current_channel < 60:
+        for current_channel in range(60):
             # We are receiving 4-byte floats.
             data = self.s.recv(self.segment_length*4 - bytes_received)
             bytes_received = bytes_received + len(data)
