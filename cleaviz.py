@@ -58,13 +58,6 @@ def downsample(x, ds):
     return x
 
 
-def init_playback(s):
-    s.send(json.dumps({
-        'experiment': 'default',
-        'channel': chconv.MCSChannelConverter.mcsviz_to_channel[12],
-    }).encode('utf-8'))
-
-
 def init_plots(win, rows, cols):
     plots = [None] * 60
     plot_objects = [None] * 60
@@ -89,6 +82,11 @@ class CleavizWindow(pg.GraphicsWindow):
     def __init__(self, sample_rate, segment_length, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
+        # Hard code these for now, use argparse maybe later? We are just
+        # testing that we are receiving something at all, really.
+        self.address = 'localhost'
+        self.port = 8080
+
         # Cosmetic.
         self.current_yrange = 10**(-4)
         self.setBackground("#353535")
@@ -110,6 +108,69 @@ class CleavizWindow(pg.GraphicsWindow):
         # Connect mouse/key signals to respective handlers.
         self.scene().sigMouseClicked.connect(self.on_click)
         self.keyPressEvent = self.on_key_press
+
+
+    def recv_segment(self):
+        current_channel = 0
+        bytes_received = 0
+        segment_data = bytearray(b'')
+
+        while current_channel < 60:
+            # We are receiving 4-byte floats.
+            data = self.s.recv(self.segment_length*4 - bytes_received)
+            bytes_received = bytes_received + len(data)
+            segment_data.extend(data)
+
+            if (bytes_received != self.segment_length*4):
+                continue
+
+            # Print the received segment data.
+            new_channel_data = []
+            for i in struct.iter_unpack('f', segment_data):
+                new_channel_data.append(i[0])
+            new_channel_data = downsample(new_channel_data, 20)
+
+            self.channel_data[current_channel].extend(new_channel_data)
+            self.channel_data[current_channel] = self.channel_data[current_channel][-self.data_in_window:]
+
+            # Reset for next segment.
+            segment_data = bytearray(b'')
+            bytes_received = 0
+            current_channel += 1
+
+
+    def update_plots(self):
+        # Data to plot.
+        x_axis_data = [x for x in range(len(self.channel_data[0]))]
+
+        if self.zoomed_plot:
+            self.zoomed_plot.plot(x_axis_data, self.channel_data[self.zoomed_plot_num],
+                                  pen=pg.mkPen('#EB9904'), clear=True)
+            pg.QtGui.QApplication.processEvents()
+        else:
+            for i in range(self.rows):
+                for j in range(self.cols):
+                    channel = mcs_lookup(i+1, j+1)
+                    if channel != -1:
+                        self.plots[channel].setData(x=x_axis_data, y=self.channel_data[channel])
+            pg.QtGui.QApplication.processEvents()
+
+
+    def run(self):
+        self.channel_data = {n: [] for n in range(60)}
+        segment_counter = 0
+
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as self.s:
+            self.s.connect((self.address, self.port))
+
+            # Are we struggling to keep up with the data stream?.
+            threading.Thread(target=sync_watchdog, args=([self.s, self.sample_rate])).start()
+
+            while True:
+                self.recv_segment()
+                segment_counter = (segment_counter + 1) % (1000 // self.segment_length + 3)
+                if segment_counter == 0:
+                    self.update_plots()
 
 
     def on_click(self, event):
@@ -153,71 +214,9 @@ class CleavizWindow(pg.GraphicsWindow):
 
 
 def main():
-    # Hard code these for now, use argparse maybe later? We are just
-    # testing that we are receiving something at all, really.
-    address = 'localhost'
-    port = 8080
-
-    # Plot the received data in real time.
     app = pg.QtGui.QApplication([])
     win = CleavizWindow(sample_rate=10000, segment_length=100)
-
-    segment_counter = 0
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        s.connect((address, port))
-        channel_data = {n: [] for n in range(60)}
-        segment_data = bytearray(b'')
-        bytes_received = 0
-
-        # Write JSON formatted settings to the remote stream server.
-        # init_playback(s)
-
-        # Are we struggling to keep up with the data stream?.
-        threading.Thread(target=sync_watchdog, args=([s, win.sample_rate])).start()
-
-        while True:
-            current_channel = 0
-            while current_channel < 60:
-                # We are receiving 4-byte floats.
-                data = s.recv(win.segment_length*4 - bytes_received)
-                bytes_received = bytes_received + len(data)
-                segment_data.extend(data)
-
-                if (bytes_received != win.segment_length*4):
-                    continue
-
-                # Print the received segment data.
-                new_channel_data = []
-                for i in struct.iter_unpack('f', segment_data):
-                    new_channel_data.append(i[0])
-                new_channel_data = downsample(new_channel_data, 20)
-
-                channel_data[current_channel].extend(new_channel_data)
-                channel_data[current_channel] = channel_data[current_channel][-win.data_in_window:]
-
-                # Reset for next segment.
-                segment_data = bytearray(b'')
-                bytes_received = 0
-                current_channel += 1
-
-            # Data to plot.
-            x_axis_data = [x for x in range(len(channel_data[0]))]
-
-            segment_counter = (segment_counter + 1) % (1000 // win.segment_length + 3)
-            if win.zoomed_plot:
-                if segment_counter == 0:
-                    win.zoomed_plot.plot(x_axis_data, channel_data[win.zoomed_plot_num],
-                                         pen=pg.mkPen('#EB9904'), clear=True)
-                    pg.QtGui.QApplication.processEvents()
-            else:
-                if segment_counter == 0:
-                    for i in range(win.rows):
-                        for j in range(win.cols):
-                            channel = mcs_lookup(i+1, j+1)
-                            if channel != -1:
-                                win.plots[channel].setData(x=x_axis_data, y=channel_data[channel])
-
-                    pg.QtGui.QApplication.processEvents()
+    win.run()
 
 
 if __name__ == '__main__':
