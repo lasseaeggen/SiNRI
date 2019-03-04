@@ -102,10 +102,11 @@ class Experiment(object):
         return timestamps, data
 
 
-    def plot_channel(self, ch, start=0, end=0):
+    def plot_channel(self, ch, start=0, end=0, ylim=100):
         """
         Plots a given channel within a recording. start and stop are
-        used to specify the interval that is to be used.
+        used to specify the interval that is to be used. ylim
+        specifies y-axis range in microvolts.
         """
         # Initialize plot(s).
         fig, axes = plt.subplots(1, 1, figsize=(15, 10))
@@ -116,6 +117,7 @@ class Experiment(object):
         ax = axes[0]
         ax.set_ylabel('μV')
         ax.set_xlabel('Time')
+        ax.set_ylim(-ylim, ylim)
 
         timestamps, data = self.get_channel_plot_data(ch, start, end)
         ax.plot(timestamps, data, color='#EB9904')
@@ -125,7 +127,8 @@ class Experiment(object):
     def plot_channels(self, start=0, end=0):
         """
         Plots all the channels within a recording. start and stop are
-        used to specify the interval that is to be used.
+        used to specify the interval that is to be used. ylim
+        specifies y-axis range in microvolts.
         """
         # Initialize plot(s).
         fig, axes = plt.subplots(6, 10, figsize=(15, 10))
@@ -140,6 +143,7 @@ class Experiment(object):
             ax.set_title(ch)
             ax.set_ylabel('μV')
             ax.set_xlabel('Time')
+            ax.set_ylim(-ylim, ylim)
 
             timestamps, data = self.get_channel_plot_data(ch, start, end)
             ax.plot(timestamps, data, color='#EB9904')
