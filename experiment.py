@@ -78,7 +78,7 @@ class Experiment(object):
                           info['ElectrodeGroup']))
 
 
-    def plot_channel(self, ch, start=0, stop=0):
+    def plot_channel(self, ch, start=0, end=0):
         """
         Plots a given channel within a recording. start and stop are
         used to specify the interval that is to be used.
@@ -89,8 +89,12 @@ class Experiment(object):
         tickrate = ch_info.sampling_tick.to('seconds')
 
         # How much data do we want to plot (all of it for now)?
-        start = 0
-        end = ch_data.shape[0]
+        if start:
+            start = int(start * self.sample_rate)
+        if end:
+            end = int(end * self.sample_rate)
+        else:
+            end = ch_data.shape[0]
 
         # Get x-axis.
         timestamps, unit = self.stream.get_channel_sample_timestamps(ch, start, end)
@@ -101,7 +105,7 @@ class Experiment(object):
         data = McsPy.ureg.convert(data, unit, 'microvolt')
 
         # Initialize plot(s).
-        fig, axes = plt.subplots(1, 1)
+        fig, axes = plt.subplots(1, 1, figsize=(15, 10))
         fig.suptitle(self.filename + ' - Channel: {}'.format(ch))
 
         axes = np.atleast_1d(axes)
