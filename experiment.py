@@ -78,15 +78,10 @@ class Experiment(object):
                           info['ElectrodeGroup']))
 
 
-    def plot_channel(self, ch, start=0, end=0):
-        """
-        Plots a given channel within a recording. start and stop are
-        used to specify the interval that is to be used.
-        """
+    def get_channel_plot_data(self, ch, start=0, end=0):
         # Fetch the wanted channel information.
         ch_info = self.stream.channel_infos[ch]
         ch_data = self.stream.channel_data[ch]
-        tickrate = ch_info.sampling_tick.to('seconds')
 
         # How much data do we want to plot (all of it for now)?
         if start:
@@ -104,6 +99,14 @@ class Experiment(object):
         data, unit = self.stream.get_channel_in_range(ch, start, end)
         data = McsPy.ureg.convert(data, unit, 'microvolt')
 
+        return timestamps, data
+
+
+    def plot_channel(self, ch, start=0, end=0):
+        """
+        Plots a given channel within a recording. start and stop are
+        used to specify the interval that is to be used.
+        """
         # Initialize plot(s).
         fig, axes = plt.subplots(1, 1, figsize=(15, 10))
         fig.suptitle(self.filename + ' - Channel: {}'.format(ch))
@@ -114,5 +117,31 @@ class Experiment(object):
         ax.set_ylabel('μV')
         ax.set_xlabel('Time')
 
+        timestamps, data = self.get_channel_plot_data(ch, start, end)
         ax.plot(timestamps, data, color='#EB9904')
+        plt.show()
+
+
+    def plot_channels(self, start=0, end=0):
+        """
+        Plots all the channels within a recording. start and stop are
+        used to specify the interval that is to be used.
+        """
+        # Initialize plot(s).
+        fig, axes = plt.subplots(6, 10, figsize=(15, 10))
+        fig.suptitle(self.filename)
+
+        axes = np.atleast_1d(axes)
+        axes = axes.flatten()
+
+        for ch in range(60):
+            print('plot_channels: Reading channel: {}'.format(ch))
+            ax = axes[ch]
+            ax.set_title(ch)
+            ax.set_ylabel('μV')
+            ax.set_xlabel('Time')
+
+            timestamps, data = self.get_channel_plot_data(ch, start, end)
+            ax.plot(timestamps, data, color='#EB9904')
+
         plt.show()
