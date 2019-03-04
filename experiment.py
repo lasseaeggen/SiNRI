@@ -4,6 +4,8 @@ logger = log.get_logger(__name__)
 from McsPy import McsData
 import McsPy
 import logging
+import matplotlib.pyplot as plt
+import numpy as np
 
 
 class Experiment(object):
@@ -74,3 +76,39 @@ class Experiment(object):
                           info['ChannelID'],
                           info['Label'],
                           info['ElectrodeGroup']))
+
+
+    def plot_channel(self, ch, start=0, stop=0):
+        """
+        Plots a given channel within a recording. start and stop are
+        used to specify the interval that is to be used.
+        """
+        # Fetch the wanted channel information.
+        ch_info = self.stream.channel_infos[ch]
+        ch_data = self.stream.channel_data[ch]
+        tickrate = ch_info.sampling_tick.to('seconds')
+
+        # How much data do we want to plot (all of it for now)?
+        start = 0
+        end = ch_data.shape[0]
+
+        # Get x-axis.
+        timestamps, unit = self.stream.get_channel_sample_timestamps(ch, start, end)
+        timestamps = McsPy.ureg.convert(timestamps, unit, 'seconds')
+
+        # Get y-axis.
+        data, unit = self.stream.get_channel_in_range(ch, start, end)
+        data = McsPy.ureg.convert(data, unit, 'microvolt')
+
+        # Initialize plot(s).
+        fig, axes = plt.subplots(1, 1)
+        fig.suptitle(self.filename + ' - Channel: {}'.format(ch))
+
+        axes = np.atleast_1d(axes)
+        axes = axes.flatten()
+        ax = axes[0]
+        ax.set_ylabel('μV')
+        ax.set_xlabel('Time')
+
+        ax.plot(timestamps, data, color='#EB9904')
+        plt.show()

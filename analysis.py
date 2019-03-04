@@ -1,10 +1,9 @@
 import experiment as expmnt
-import matplotlib.pyplot as plt
 
 
 def main():
     experiment = expmnt.Experiment('mea_data/1.h5')
-    experiment.info()
+    experiment.plot_channel(0)
 
 
 if __name__ == '__main__':
