@@ -48,6 +48,17 @@ def main():
     # ch_data = ch_data[12]
     # dp.detect_peaks(ch_data, show=True)
 
+    """Peak detection example, plotting the amount of peaks of each
+    bucket."""
+    # ch_data, unit = experiment.get_channel_data(ch)
+    # ch_data = split(ch_data, experiment.sample_rate, 1000)
+    # threshold = 15*1e-6
+    # peaks = [len(dp.detect_peaks(x, mph=threshold)) for x in ch_data]
+    # valleys = [len(dp.detect_peaks(x, valley=True, mph=-threshold)) for x in ch_data]
+    # plt.plot(peaks)
+    # plt.plot(valleys)
+    # plt.show()
+
 
 if __name__ == '__main__':
     main()
