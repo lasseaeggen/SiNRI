@@ -49,7 +49,8 @@ class MEAMEMock(object):
             while True:
                 for i in range(60):
                     data = self.data[i][tick*self.data_per_tick:(tick+1)*self.data_per_tick]
-                    client.send(struct.pack('{}f'.format(len(data)), *data))
+                    data = [int(x / experiment.Experiment.conversion_constant) for x in data]
+                    client.send(struct.pack('<{}i'.format(len(data)), *data))
                 tick = (tick + 1) % (self.seconds * self.ticks_per_sec)
                 time.sleep(self.tick_rate)
         except (KeyboardInterrupt, SystemExit,

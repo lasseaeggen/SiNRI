@@ -88,12 +88,12 @@ class PlaybackStream(Stream):
 
 
 class LiveStream(Stream):
-    def __init__(self, client, channel):
+    def __init__(self, client, channel, meame_addr):
         super().__init__()
         self.client = client
         self.channel = channel
         self.reflect =  False
-        self.meame = meamer.MEAMEr()
+        self.meame = meamer.MEAMEr(meame_addr)
         self.meame.initialize_DAQ(sample_rate=10000, segment_length=1000)
         self.meame.enable_DAQ_listener()
 
@@ -132,15 +132,14 @@ class LiveStream(Stream):
 
 
 class Server(object):
-    live = False
-
-    def __init__(self, port, auto_setup=False, sawtooth=False, reflect=False):
+    def __init__(self, port, auto_setup=False, sawtooth=False, reflect=False,
+                 meame_addr=''):
         self.host = '0.0.0.0'
         self.port = port
-        self.live = Server.live
         self.auto_setup = auto_setup
         self.sawtooth = sawtooth
         self.reflect = reflect
+        self.meame_addr = meame_addr
 
 
     def listen(self):
@@ -206,11 +205,11 @@ class Server(object):
 
     def setup_live_stream(self, client):
         channel = chconv.MCSChannelConverter.mcsviz_to_channel[22]
-        return LiveStream(client, channel)
+        return LiveStream(client, channel, self.meame_addr)
 
 
     def handle_client(self, client, addr):
-        if self.live:
+        if self.meame_addr:
             stream = self.setup_live_stream(client)
         else:
             stream = self.setup_playback_stream(client)
@@ -243,20 +242,12 @@ class Server(object):
 
 
 def main(args):
-    # Static member of the MEAMEr class for now, we should perhaps
-    # refactor this into setting a complete configuration on startup
-    # instead.
-    if args.connect_mock:
-        meamer.MEAMEr.mock = True
-
-    if args.live:
-        Server.live = True
-
     try:
         server = Server(8080,
                         auto_setup=args.auto_setup,
                         sawtooth=args.sawtooth,
-                        reflect=args.reflect)
+                        reflect=args.reflect,
+                        meame_addr=args.live)
         server.listen()
     except Exception as e:
         logger.info('Unexpected event, shutting down gracefully')
@@ -267,11 +258,10 @@ if __name__ == '__main__':
     import argparse
     parser = argparse.ArgumentParser(description='Grinder - the minimal MEAME communicator')
 
-    parser.add_argument('--live', help='Acquire live data from remote MEAME DAQ server', action='store_true')
+    parser.add_argument('--live', help='Acquire live data from remote MEAME DAQ server')
     parser.add_argument('--playback', help='Replay and serve experiments from hd5 files', action='store_true')
     parser.add_argument('--auto-setup', help='Serve playback directly without setup', action='store_true')
     parser.add_argument('--sawtooth', help='Set server to auto generate sawtooth waves', action='store_true')
-    parser.add_argument('--connect-mock', help='Connect to a mock DAQ server, no setup possible', action='store_true')
     parser.add_argument('--reflect', help='Reflect the stream data «as-is», without demultiplexing channels', action='store_true')
 
     args = parser.parse_args()

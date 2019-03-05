@@ -5,19 +5,14 @@ import socket
 import struct
 import requests
 import time
+import experiment
 
 
 class MEAMEr(object):
-    mock = False
-
-    # (TODO): Move MEAMEr to own module, it has nothing to do with
-    # serving data, only fetching it. I can't now, the DAQ is down.
-    def __init__(self):
-        self.mock = MEAMEr.mock
-        self.data_format = '<f' if self.mock else '<i'
-        self.conversion_constant = 5.9605e-08 if not self.mock else 1
-        self.address = 'localhost' if self.mock else '10.20.92.130'
-        self.mea_daq_port = 12340 if self.mock else 12340
+    def __init__(self, address):
+        self.data_format = '<i'
+        self.address = address
+        self.mea_daq_port = 12340
         self.sawtooth_port = 12341
         self.http_address = 'http://' + self.address
         self.http_port = 8888
@@ -65,7 +60,7 @@ class MEAMEr(object):
 
 
     def initialize_DAQ(self, sample_rate, segment_length):
-        if self.mock:
+        if self.address == 'localhost':
             self.sample_rate = sample_rate
             self.segment_length = segment_length
             return
@@ -106,7 +101,7 @@ class MEAMEr(object):
         Warning: stopping the DAQ server is not implemented in
         MEAME. This method will in practice achieve nothing at all.
         """
-        if self.mock:
+        if self.address == 'localhost':
             return
 
         try:
@@ -143,7 +138,7 @@ class MEAMEr(object):
                 continue
 
             for i, dp in enumerate(struct.iter_unpack(self.data_format, bsegment_data)):
-                segment_data[i] = dp[0] * self.conversion_constant
+                segment_data[i] = dp[0] * experiment.Experiment.conversion_constant
 
             # We are only fetching a select amount of data, so break
             # out when we're done.

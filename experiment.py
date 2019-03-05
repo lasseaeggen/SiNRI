@@ -9,6 +9,9 @@ import numpy as np
 
 
 class Experiment(object):
+    # Statically set for all experiment objets.
+    conversion_constant = 5.9605e-08
+
     def __init__(self, h5_file):
         # McsData a bunch of garbage (hopefully _only_ garbage).
         McsData.VERBOSE = False
