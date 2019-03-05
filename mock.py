@@ -45,14 +45,22 @@ class MEAMEMock(object):
         client, addr = s.accept()
         logger.info('Received connection from {addr}'.format(addr=addr))
         tick = 0
+        prev_time = time.perf_counter()
         try:
             while True:
                 for i in range(60):
-                    data = self.data[i][tick*self.data_per_tick:(tick+1)*self.data_per_tick]
-                    data = [int(x / experiment.Experiment.conversion_constant) for x in data]
+                    data = [int(x / experiment.Experiment.conversion_constant) for x in
+                            self.data[i][tick*self.data_per_tick:(tick+1)*self.data_per_tick]]
                     client.send(struct.pack('<{}i'.format(len(data)), *data))
                 tick = (tick + 1) % (self.seconds * self.ticks_per_sec)
-                time.sleep(self.tick_rate)
+
+                # To keep a steady pace, we need to sleep only a given
+                # amount of time, as it is unlikely that each
+                # iteration takes exactly the same amount of time.
+                diff = time.perf_counter() - prev_time
+                sleep_time = min(max(self.tick_rate - diff, 0), self.tick_rate)
+                prev_time = time.perf_counter()
+                time.sleep(sleep_time)
         except (KeyboardInterrupt, SystemExit,
                 ConnectionResetError, BrokenPipeError):
             client.close()
