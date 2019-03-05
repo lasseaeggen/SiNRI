@@ -5,7 +5,7 @@ import meamer
 
 
 def main(args):
-    meame = meamer.MEAMEr()
+    meame = meamer.MEAMEr('10.20.92.130')
 
     if args.setup:
         meame.setup_stim()
