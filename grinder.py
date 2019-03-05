@@ -66,8 +66,22 @@ class MEAMEMock(object):
             s.shutdown(socket.SHUT_RDWR)
 
 
-class PlaybackStream(object):
+class Stream(object):
+    def __init__(self):
+        self.reflect = False
+
+
+    def enable_reflector_mode(self):
+        self.reflect = True
+
+
+    def disable_reflector_mode(self):
+        self.reflect = False
+
+
+class PlaybackStream(Stream):
     def __init__(self, client, channel, segment_length=100, active_experiment='default'):
+        super().__init__()
         self.client = client
         self.tick_rate = 0.01
         self.channel = channel
@@ -115,17 +129,22 @@ class PlaybackStream(object):
         stop = start + self.segment_length
         for ch in range(60):
             data = self.data[ch][start:stop]
-            self.client.send(struct.pack('{}f'.format(len(data)), *data))
+            if self.reflect:
+                self.client.send(struct.pack('{}f'.format(len(data)), *data))
+            elif ch == self.channel:
+                self.client.send(struct.pack('{}f'.format(len(data)), *data))
 
 
     def close(self):
         self.client.close()
 
 
-class LiveStream(object):
+class LiveStream(Stream):
     def __init__(self, client, channel):
+        super().__init__()
         self.client = client
         self.channel = channel
+        self.reflect =  False
         self.meame = meamer.MEAMEr()
         self.meame.initialize_DAQ(sample_rate=10000, segment_length=1000)
         self.meame.enable_DAQ_listener()
@@ -148,7 +167,11 @@ class LiveStream(object):
 
         while True:
             data = self.meame.recv_segment()
-            self.client.send(struct.pack('{}f'.format(len(data)), *data))
+
+            if self.reflect:
+                self.client.send(struct.pack('{}f'.format(len(data)), *data))
+            elif current_channel == self.channel:
+                self.client.send(struct.pack('{}f'.format(len(data)), *data))
 
             current_channel += 1
             if current_channel == 60:
@@ -163,12 +186,13 @@ class LiveStream(object):
 class Server(object):
     live = False
 
-    def __init__(self, port, auto_setup=False, sawtooth=False):
+    def __init__(self, port, auto_setup=False, sawtooth=False, reflect=False):
         self.host = '0.0.0.0'
         self.port = port
         self.live = Server.live
         self.auto_setup = auto_setup
         self.sawtooth = sawtooth
+        self.reflect = reflect
 
 
     def listen(self):
@@ -242,6 +266,10 @@ class Server(object):
             stream = self.setup_live_stream(client)
         else:
             stream = self.setup_playback_stream(client)
+
+        if self.reflect:
+            stream.enable_reflector_mode()
+
         while True:
             try:
                 if self.sawtooth:
@@ -281,7 +309,10 @@ def main(args):
         mock.run()
     else:
         try:
-            server = Server(8080, auto_setup=args.auto_setup, sawtooth=args.sawtooth)
+            server = Server(8080,
+                            auto_setup=args.auto_setup,
+                            sawtooth=args.sawtooth,
+                            reflect=args.reflect)
             server.listen()
         except Exception as e:
             logger.info('Unexpected event, shutting down gracefully')
@@ -297,8 +328,8 @@ if __name__ == '__main__':
     parser.add_argument('--meame', help='Take the place of MEAME, sending mock data', action='store_true')
     parser.add_argument('--auto-setup', help='Serve playback directly without setup', action='store_true')
     parser.add_argument('--sawtooth', help='Set server to auto generate sawtooth waves', action='store_true')
-    parser.add_argument('--channel', help='Specify which of the MEA output channels is wanted')
     parser.add_argument('--connect-mock', help='Connect to a mock DAQ server, no setup possible', action='store_true')
+    parser.add_argument('--reflect', help='Reflect the stream data «as-is», without demultiplexing channels', action='store_true')
 
     args = parser.parse_args()
     main(args)
