@@ -14,58 +14,6 @@ import traceback
 import keyboard
 
 
-class MEAMEMock(object):
-    def __init__(self, port):
-        self.host = '0.0.0.0'
-        self.port = port
-        self.experiment = experiment.Experiment('mea_data/1.h5')
-        self.tick_rate = 0.01
-        self.ticks_per_sec = int(1 / self.tick_rate)
-        self.data_per_tick = int(self.experiment.sample_rate * self.tick_rate)
-        self.data = {}
-
-        # Only fetch a small amount of data that will be replayed. We
-        # are mostly just interesting in having something that mocks
-        # MEAME at all for testing purposes.
-        logger.info('Initializing MEAME mock by reading experiment data')
-        self.seconds = 15
-        self.playback_length = int(self.seconds * self.experiment.sample_rate)
-        for i in range(60):
-            logger.info('Channel {i} read'.format(i=i))
-            self.data[i] = self.experiment.get_channel_in_range(i, 0, self.playback_length)[0]
-
-
-    def run(self):
-        while True:
-            try:
-                self.listen()
-            except KeyboardInterrupt:
-                return
-
-
-    def listen(self):
-        logger.info('Setting up MEAME mock socket, awaiting connections')
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.bind((self.host, self.port))
-        s.listen(5)
-
-        client, addr = s.accept()
-        logger.info('Received connection from {addr}'.format(addr=addr))
-        tick = 0
-        try:
-            while True:
-                for i in range(60):
-                    data = self.data[i][tick*self.data_per_tick:(tick+1)*self.data_per_tick]
-                    client.send(struct.pack('{}f'.format(len(data)), *data))
-                tick = (tick + 1) % (self.seconds * self.ticks_per_sec)
-                time.sleep(self.tick_rate)
-        except (KeyboardInterrupt, SystemExit,
-                ConnectionResetError, BrokenPipeError):
-            client.close()
-            logger.info('Shutdown request detected, shutting down gracefully')
-            s.shutdown(socket.SHUT_RDWR)
-
-
 class Stream(object):
     def __init__(self):
         self.reflect = False
@@ -304,19 +252,15 @@ def main(args):
     if args.live:
         Server.live = True
 
-    if args.meame:
-        mock = MEAMEMock(12340)
-        mock.run()
-    else:
-        try:
-            server = Server(8080,
-                            auto_setup=args.auto_setup,
-                            sawtooth=args.sawtooth,
-                            reflect=args.reflect)
-            server.listen()
-        except Exception as e:
-            logger.info('Unexpected event, shutting down gracefully')
-            server.socket.shutdown(socket.SHUT_RDWR)
+    try:
+        server = Server(8080,
+                        auto_setup=args.auto_setup,
+                        sawtooth=args.sawtooth,
+                        reflect=args.reflect)
+        server.listen()
+    except Exception as e:
+        logger.info('Unexpected event, shutting down gracefully')
+        server.socket.shutdown(socket.SHUT_RDWR)
 
 
 if __name__ == '__main__':
@@ -325,7 +269,6 @@ if __name__ == '__main__':
 
     parser.add_argument('--live', help='Acquire live data from remote MEAME DAQ server', action='store_true')
     parser.add_argument('--playback', help='Replay and serve experiments from hd5 files', action='store_true')
-    parser.add_argument('--meame', help='Take the place of MEAME, sending mock data', action='store_true')
     parser.add_argument('--auto-setup', help='Serve playback directly without setup', action='store_true')
     parser.add_argument('--sawtooth', help='Set server to auto generate sawtooth waves', action='store_true')
     parser.add_argument('--connect-mock', help='Connect to a mock DAQ server, no setup possible', action='store_true')
