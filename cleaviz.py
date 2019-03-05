@@ -215,11 +215,21 @@ class CleavizWindow(pg.GraphicsWindow):
                 plot.setYRange(-self.current_yrange, self.current_yrange, padding=0)
 
 
-def main():
+def main(args):
+    segment_length = 1000
+    if args.segment_length:
+        segment_length = int(args.segment_length)
+
     app = pg.QtGui.QApplication([])
-    win = CleavizWindow(sample_rate=10000, segment_length=1000)
+    win = CleavizWindow(sample_rate=10000, segment_length=segment_length)
     win.run()
 
 
 if __name__ == '__main__':
-    main()
+    import argparse
+    parser = argparse.ArgumentParser(description='Cleaviz - visualization tool for usage with Grinder')
+
+    parser.add_argument('--segment-length', help='Specify the length of the received segments')
+
+    args = parser.parse_args()
+    main(args)
