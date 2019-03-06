@@ -67,21 +67,36 @@ def spectral_analysis(data):
                              aspect='auto', origin='lowest', cmap='jet')
 
 
+    pause = False
+    def on_click(event):
+        if event.key == 'p':
+            nonlocal pause
+            pause ^= True
+
+
+    ticks = 0
     def update_data(n):
+        if pause:
+            return
+
+        nonlocal ticks
+        ticks += 1
+
         # Update raw plot.
-        start = int(n/10 * sample_rate)
-        end = int((n+30)/10 * sample_rate)
+        start = int(ticks/10 * sample_rate)
+        end = int((ticks+30)/10 * sample_rate)
         ax_raw.clear()
         ax_raw.set_ylim(-100, 100)
         ax_raw.plot(data[start:end], color='#EB9904')
 
         # Update spectrogram.
-        start = int(n * segments_per_second*0.1)
-        end = int((n+30) * segments_per_second*0.1)
-        im_spec.set_extent([n/10, (n+30)/10, 0, f[-1]])
+        start = int(ticks * segments_per_second*0.1)
+        end = int((ticks+30) * segments_per_second*0.1)
+        im_spec.set_extent([ticks/10, (ticks+30)/10, 0, f[-1]])
         im_spec.set_data(Zxx[:, start:end])
 
 
+    fig.canvas.mpl_connect('key_press_event', on_click)
     ani = animation.FuncAnimation(fig, update_data, interval=100, blit=False, repeat=False)
     plt.show()
 
