@@ -26,6 +26,10 @@ def split(data, sample_rate, ms):
     return data
 
 
+def simple_moving_average(data, N):
+    return np.convolve(np.absolute(data), np.ones((N,))/N, mode='valid')
+
+
 def main():
     ch = chconv.MCSChannelConverter.mcsviz_to_channel[21]
     experiment = expmnt.Experiment('mea_data/1.h5')
@@ -57,6 +61,13 @@ def main():
     # valleys = [len(dp.detect_peaks(x, valley=True, mph=-threshold)) for x in ch_data]
     # plt.plot(peaks)
     # plt.plot(valleys)
+    # plt.show()
+
+    """SMA over a given dataset of a window size."""
+    # ch_data, unit = experiment.get_channel_data(ch)
+    # window_width = 10
+    # sma = simple_moving_average(ch_data, window_width)
+    # plt.plot(sma)
     # plt.show()
 
 
