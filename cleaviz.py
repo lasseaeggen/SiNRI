@@ -4,6 +4,7 @@ logger = log.get_logger(__name__)
 import channelconverter as chconv
 import socket
 import struct
+import PyQt5
 import pyqtgraph as pg
 import scipy.signal
 import datetime

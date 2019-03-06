@@ -62,7 +62,8 @@ class MEAMEMock(object):
                 prev_time = time.perf_counter()
                 time.sleep(sleep_time)
         except (KeyboardInterrupt, SystemExit,
-                ConnectionResetError, BrokenPipeError):
+                ConnectionResetError, BrokenPipeError,
+                ConnectionAbortedError):
             client.close()
             logger.info('Shutdown request detected, shutting down gracefully')
             s.shutdown(socket.SHUT_RDWR)
