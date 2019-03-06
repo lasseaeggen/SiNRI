@@ -61,12 +61,16 @@ class MEAMEMock(object):
                 sleep_time = min(max(self.tick_rate - diff, 0), self.tick_rate)
                 prev_time = time.perf_counter()
                 time.sleep(sleep_time)
-        except (KeyboardInterrupt, SystemExit,
-                ConnectionResetError, BrokenPipeError,
-                ConnectionAbortedError):
+        except (KeyboardInterrupt, SystemExit):
             client.close()
             logger.info('Shutdown request detected, shutting down gracefully')
             s.shutdown(socket.SHUT_RDWR)
+        except (ConnectionAbortedError, ConnectionResetError,
+                BrokenPipeError):
+            client.close()
+            logger.info('Client disconnected, restarting mock')
+            s.close()
+            self.listen()
 
 
 def main():
