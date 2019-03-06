@@ -2,7 +2,11 @@ import experiment as expmnt
 import channelconverter as chconv
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.animation as animation
 import lib.detect_peaks as dp
+import time
+import scipy
+from scipy.signal import stft, get_window
 
 
 def split(data, sample_rate, ms):
@@ -28,6 +32,58 @@ def split(data, sample_rate, ms):
 
 def simple_moving_average(data, N):
     return np.convolve(np.absolute(data), np.ones((N,))/N, mode='valid')
+
+
+def spectral_analysis(data):
+    sample_rate = 10000
+    seconds = 35
+    data_length = seconds * sample_rate
+    seg_length = 100
+    noverlap = 0.8
+    segments = data_length // (seg_length*(1-noverlap))
+    segments_per_second = segments // seconds
+    num_buckets = 30
+
+    f, t, Zxx = stft(data[:data_length], fs=10000, window='hamming',
+                     nperseg=seg_length, noverlap=seg_length*noverlap)
+    f = f[:num_buckets]
+    Zxx = np.abs(Zxx[:num_buckets, :])
+
+    # Normal method of doing this -- looks a slight bit different with
+    # vmin, vmax, cmap.
+    # fig = plt.pcolormesh(t, f, np.abs(Zxx))
+    # plt.show()
+
+    # Main figure.
+    fig = plt.figure(1)
+
+    # Axes of imshow for raw data.
+    ax_raw = fig.add_subplot(211)
+    im_raw, = ax_raw.plot(data[:data_length], color='#EB9904')
+
+    # Axes of imshow for spectrum.
+    ax_spec = fig.add_subplot(212)
+    im_spec = ax_spec.imshow(Zxx, extent=[0, t[-1], 0, f[-1]],
+                             aspect='auto', origin='lowest', cmap='jet')
+
+
+    def update_data(n):
+        # Update raw plot.
+        start = int(n/10 * sample_rate)
+        end = int((n+30)/10 * sample_rate)
+        ax_raw.clear()
+        ax_raw.set_ylim(-100, 100)
+        ax_raw.plot(data[start:end], color='#EB9904')
+
+        # Update spectrogram.
+        start = int(n * segments_per_second*0.1)
+        end = int((n+30) * segments_per_second*0.1)
+        im_spec.set_extent([n/10, (n+30)/10, 0, f[-1]])
+        im_spec.set_data(Zxx[:, start:end])
+
+
+    ani = animation.FuncAnimation(fig, update_data, interval=100, blit=False, repeat=False)
+    plt.show()
 
 
 def main():
@@ -69,6 +125,16 @@ def main():
     # sma = simple_moving_average(ch_data, window_width)
     # plt.plot(sma)
     # plt.show()
+
+    """Try to do ridge regression over some training data. Does not do
+    anything at all for now."""
+    # ch_data, unit = experiment.get_channel_data(0)
+    # plt.plot(ch_data)
+    # plt.show()
+
+    """Spectral analysis."""
+    ch_timestamps, ch_data = experiment.get_channel_plot_data(0)
+    spectral_analysis(ch_data)
 
 
 if __name__ == '__main__':
