@@ -12,7 +12,10 @@ import json
 import numpy as np
 import threading
 import time
-import fcntl, termios, array
+import os
+
+if not os.name == 'nt':
+    import fcntl, termios, array
 
 
 # Some important info for the visualizer is how the TCP buffers
@@ -26,6 +29,9 @@ import fcntl, termios, array
 
 
 def sync_watchdog(s, sample_rate):
+    if os.name == 'nt':
+        return
+
     # Used to see how much data is ready to be read in from the socket
     # (to see if we are lagging behind).
     sock_size = array.array('i', [0])
