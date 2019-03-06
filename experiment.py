@@ -127,7 +127,7 @@ class Experiment(object):
         plt.show()
 
 
-    def plot_channels(self, start=0, end=0):
+    def plot_channels(self, start=0, end=0, ylim=100):
         """
         Plots all the channels within a recording. start and stop are
         used to specify the interval that is to be used. ylim
