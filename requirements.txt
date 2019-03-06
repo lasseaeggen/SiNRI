@@ -4,3 +4,4 @@ requests
 pyqtgraph
 keyboard
 matplotlib
+PyQt5

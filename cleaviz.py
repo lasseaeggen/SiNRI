@@ -11,6 +11,7 @@ import datetime
 import json
 import numpy as np
 import threading
+import sthread
 import time
 import os
 
@@ -40,6 +41,11 @@ def sync_watchdog(s, sample_rate):
     # received -- this signifies that we are not keeping up
     # with the data stream.
     while True:
+        # Get current thread and check whether we should terminate.
+        current_thread = threading.current_thread()
+        if current_thread.stopped():
+            return
+
         fcntl.ioctl(s, termios.FIONREAD, sock_size)
         if (sock_size[0] // 4 >= 20*sample_rate):
             logger.info('{s} data available in TCP socket'.format(s=sock_size[0]))
@@ -115,6 +121,7 @@ class CleavizWindow(pg.GraphicsWindow):
         # Connect mouse/key signals to respective handlers.
         self.scene().sigMouseClicked.connect(self.on_click)
         self.keyPressEvent = self.on_key_press
+        self.closeEvent = self.on_close
 
         self.x_axis_data = np.arange(self.data_in_window)
 
@@ -165,6 +172,7 @@ class CleavizWindow(pg.GraphicsWindow):
 
 
     def run(self):
+        self.running = True
         self.channel_data = {n: np.array([]) for n in range(60)}
         segment_counter = 0
 
@@ -172,10 +180,14 @@ class CleavizWindow(pg.GraphicsWindow):
             self.s.connect((self.address, self.port))
 
             # Are we struggling to keep up with the data stream?.
-            threading.Thread(target=sync_watchdog, args=([self.s, self.sample_rate])).start()
+            self.watchdog = sthread.StoppableThread(target=sync_watchdog, args=([self.s, self.sample_rate]))
+            self.watchdog.start()
 
             segment_mod = (1000 // self.segment_length - 0)
             while True:
+                if not self.running:
+                    return
+
                 self.recv_segment()
                 segment_counter = (segment_counter + 1) % segment_mod
                 if segment_counter == 0:
@@ -222,12 +234,19 @@ class CleavizWindow(pg.GraphicsWindow):
                 plot.setYRange(-self.current_yrange, self.current_yrange, padding=0)
 
 
+    def on_close(self, event):
+        self.watchdog.stop()
+        self.watchdog.join()
+        self.running = False
+
+
 def main(args):
     segment_length = 1000
     if args.segment_length:
         segment_length = int(args.segment_length)
 
     app = pg.QtGui.QApplication([])
+    app.setQuitOnLastWindowClosed(True)
     win = CleavizWindow(sample_rate=10000, segment_length=segment_length)
     win.run()
 
