@@ -38,11 +38,11 @@ def spectral_analysis(data):
     sample_rate = 10000
     seconds = 35
     data_length = seconds * sample_rate
-    seg_length = 100
+    seg_length = 500
     noverlap = 0.8
     segments = data_length // (seg_length*(1-noverlap))
     segments_per_second = segments // seconds
-    num_buckets = 30
+    num_buckets = 50
 
     f, t, Zxx = stft(data[:data_length], fs=10000, window='hamming',
                      nperseg=seg_length, noverlap=seg_length*noverlap)
