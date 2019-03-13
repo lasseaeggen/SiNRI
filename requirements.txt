@@ -5,3 +5,4 @@ pyqtgraph
 keyboard
 matplotlib
 PyQt5
+sklearn

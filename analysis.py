@@ -144,30 +144,30 @@ def main():
 
     """Try to do ridge regression over some training data. Does not do
     anything at all for now."""
-    ch_data, unit = experiment.get_channel_data(0)
-    f, t, Zxx = stft(ch_data, fs=10000, window='hamming',
-                     nperseg=500, noverlap=500*0.8)
-    samples = np.transpose(np.abs(Zxx))
-    samples_per_sec = round(len(ch_data) / samples.shape[0])
+    # ch_data, unit = experiment.get_channel_data(0)
+    # f, t, Zxx = stft(ch_data, fs=10000, window='hamming',
+    #                  nperseg=500, noverlap=500*0.8)
+    # samples = np.transpose(np.abs(Zxx))
+    # samples_per_sec = round(len(ch_data) / samples.shape[0])
 
-    positives = samples[12*100:int(12*100+0.6*100)]
-    negatives = samples[:60]
+    # positives = samples[12*100:int(12*100+0.6*100)]
+    # negatives = samples[:60]
 
-    print(positives, negatives)
-    print(np.max(positives), np.max(negatives))
+    # print(positives, negatives)
+    # print(np.max(positives), np.max(negatives))
 
-    # Create training data.
-    x_train = np.append(positives, negatives, axis=0)
-    y_train = [True for x in range(60)] + [False for x in range(60)]
+    # # Create training data.
+    # x_train = np.append(positives, negatives, axis=0)
+    # y_train = [True for x in range(60)] + [False for x in range(60)]
 
-    # Fit model.
-    clf = Ridge(alpha=1.0)
-    clf.fit(x_train, y_train)
-    clf.predict(samples[12*100].reshape(-1, 1).T)
+    # # Fit model.
+    # clf = Ridge(alpha=1.0)
+    # clf.fit(x_train, y_train)
+    # clf.predict(samples[12*100].reshape(-1, 1).T)
 
     """Spectral analysis."""
-    # ch_timestamps, ch_data = experiment.get_channel_plot_data(0)
-    # spectral_analysis(ch_data)
+    ch_timestamps, ch_data = experiment.get_channel_plot_data(0)
+    spectral_analysis(ch_data)
 
 
 if __name__ == '__main__':
