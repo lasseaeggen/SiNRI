@@ -80,11 +80,14 @@
   <widget class="QWidget" name="runningStatusBar" native="true">
    <property name="geometry">
     <rect>
-     <x>350</x>
-     <y>190</y>
+     <x>490</x>
+     <y>30</y>
      <width>120</width>
      <height>80</height>
     </rect>
+   </property>
+   <property name="autoFillBackground">
+    <bool>true</bool>
    </property>
   </widget>
  </widget>

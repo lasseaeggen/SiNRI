@@ -45,14 +45,20 @@ class MainWindow(QWidget):
 
 
     def startMock(self):
-        # TODO: Fix runningBar change color on run/stop
-        self.runningStatusBar.setStyleSheet("#runningStatusBar{background-color: rgb(72, 224, 31}")
+        try:
+            if not self.mockThread.stopped():
+                return
+        except AttributeError:
+            pass
+
+        self.runningStatusBar.setStyleSheet("#runningStatusBar{background-color: rgb(72, 224, 31) }")
         meameMock = mock.MEAMEMock(12340)
         self.mockThread = sthread.StoppableThread(target=meameMock.run)
         self.mockThread.start()
 
 
     def stopMock(self):
+        self.runningStatusBar.setStyleSheet("#runningStatusBar { background-color: rgb(224, 3, 0); }")
         self.mockThread.stop()
         self.mockThread.join()
 
