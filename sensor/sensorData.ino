@@ -18,7 +18,7 @@ const int echoPin = 7;
 bool isClose;
 int distance;
 long duration;
-long lastCm, rangeThresh, rangeVariance, closeTimer, reactTime, noise;
+long lastCm, rangeThresh, rangeVariance, isCloseTimer, reactTime, noise;
 
 
 void setup()
@@ -28,7 +28,7 @@ void setup()
   // To elimit possible spikes in sensor data 
   rangeVariance = 15;
   // Counts the amount of spikes in row
-   noise = 0;
+  noise = 0;
   // Keep track of the duration of person standing in front of sensor (within the threshold, of course)
   isCloseTimer = 0;
   // Threshold for the isCloseTimer
