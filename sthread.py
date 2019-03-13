@@ -13,3 +13,9 @@ class StoppableThread(threading.Thread):
 
     def stopped(self):
         return self.should_stop.is_set()
+
+
+def check_terminate_thread():
+    current_thread = threading.current_thread()
+    if type(current_thread) == StoppableThread and current_thread.stopped():
+        return True

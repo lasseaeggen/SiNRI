@@ -46,6 +46,7 @@ class MainWindow(QWidget):
 
         self.startMockButton.clicked.connect(self.startMock)
         self.startGrinderButton.clicked.connect(self.startGrinder)
+        self.stopGrinderButton.clicked.connect(self.stopGrinder)
         self.startCleavizButton.clicked.connect(self.startCleaviz)
         self.stopMockButton.clicked.connect(self.stopMock)
 
@@ -66,15 +67,18 @@ class MainWindow(QWidget):
             pass
 
         self.runningStatusBar.setStyleSheet("#runningStatusBar{background-color: rgb(72, 224, 31) }")
-        meameMock = mock.MEAMEMock(12340)
-        self.mockThread = sthread.StoppableThread(target=meameMock.run)
+        meame_mock = mock.MEAMEMock(12340)
+        self.mockThread = sthread.StoppableThread(target=meame_mock.run)
         self.mockThread.start()
 
 
     def stopMock(self):
         self.runningStatusBar.setStyleSheet("#runningStatusBar { background-color: rgb(224, 3, 0); }")
         self.mockThread.stop()
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            s.connect(('localhost', 12340))
         self.mockThread.join()
+
 
     def _startGrinder(self):
         try:
@@ -88,8 +92,16 @@ class MainWindow(QWidget):
 
 
     def startGrinder(self):
-        grndThread = sthread.StoppableThread(target=self._startGrinder, args=(), kwargs={})
-        grndThread.start()
+        self.grndThread = sthread.StoppableThread(target=self._startGrinder, args=(), kwargs={})
+        self.grndThread.start()
+
+
+    def stopGrinder(self):
+        self.grndThread.stop()
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            s.connect(('localhost', 8080))
+        self.grndThread.join()
+        print("HELLO THERE")
 
 
 def main():

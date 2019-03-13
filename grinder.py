@@ -12,6 +12,7 @@ import struct
 import json
 import traceback
 import keyboard
+import sthread
 from exceptions import UnresponsiveMEAMEError
 
 
@@ -157,6 +158,7 @@ class Server(object):
         try:
             self.socket.listen(5)
             while True:
+                if sthread.check_terminate_thread(): return
                 (client, addr) = self.socket.accept()
                 client.settimeout(60)
                 logger.info('Received connection from {addr}'.format(addr=addr))
@@ -223,6 +225,7 @@ class Server(object):
             stream.enable_reflector_mode()
 
         while True:
+            if sthread.check_terminate_thread(): return
             try:
                 if self.sawtooth:
                     i = stream.current_tick % 100

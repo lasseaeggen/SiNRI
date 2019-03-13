@@ -20,12 +20,6 @@ class MEAMEMock(object):
         self.data = {}
 
 
-    def check_terminate_thread(self):
-        current_thread = threading.current_thread()
-        if type(current_thread) == sthread.StoppableThread and current_thread.stopped():
-            return True
-
-
     def run(self):
         # Only fetch a small amount of data that will be replayed. We
         # are mostly just interested in having something that mocks
@@ -34,13 +28,13 @@ class MEAMEMock(object):
         self.seconds = 15
         self.playback_length = int(self.seconds * self.experiment.sample_rate)
         for i in range(60):
-            if self.check_terminate_thread(): return
+            if sthread.check_terminate_thread(): return
             logger.info('Channel {i} read'.format(i=i))
             self.data[i] = self.experiment.get_channel_in_range(i, 0, self.playback_length)[0]
 
         while True:
             try:
-                if self.check_terminate_thread(): return
+                if sthread.check_terminate_thread(): return
                 self.listen()
             except KeyboardInterrupt:
                 return
@@ -58,7 +52,7 @@ class MEAMEMock(object):
         prev_time = time.perf_counter()
         try:
             while True:
-                if self.check_terminate_thread(): return
+                if sthread.check_terminate_thread(): return
                 for i in range(60):
                     data = [int(x / experiment.Experiment.conversion_constant) for x in
                             self.data[i][tick*self.data_per_tick:(tick+1)*self.data_per_tick]]
