@@ -1,3 +1,9 @@
+#+OPTIONS: toc:nil # No table of contents
+#+OPTIONS: ^:nil
+#+LATEX_CLASS_OPTIONS: [abstract=off,oneside]
+#+LaTeX_HEADER: \usepackage[x11names]{xcolor}
+#+LaTeX_HEADER: \hypersetup{linktoc = all, colorlinks = true, urlcolor = DodgerBlue4, citecolor = PaleGreen1, linkcolor = black}
+
 * How to install Spyking Circus in an Anaconda environment
 
 ** Install Anaconda
@@ -39,7 +45,7 @@ extension). E.g. ~spiky.h5~ and ~spiky.params~.
 More documentation on the file format in [[https://spyking-circus.readthedocs.io/en/latest/code/parameters.html][spyking circus'
 documentation]].
 
-** mea_60.prb
+** ~mea_60.prb~
 A probe file that specifies the layout of the electrodes on the
 60EcoMEA. Radius of 50 \mu{}m and spacing between the electrodes is
 700 \mu{}m.
