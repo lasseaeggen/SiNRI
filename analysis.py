@@ -102,72 +102,88 @@ def spectral_analysis(data):
     plt.show()
 
 
+def bucketing_example(ch, experiment):
+    """Example for bucketing data, here plotting the 13th bucket
+    (giving the 12th second)."""
+    ch_data, unit = experiment.get_channel_data(ch)
+    ch_data = split(ch_data, experiment.sample_rate, 1000)
+
+    plt.plot(ch_data[12])
+    plt.show()
+
+
+def plotting_example(ch, experiment):
+    """Examples for plotting."""
+    experiment.plot_channel(ch, start=11.8, end=12.8)
+    experiment.plot_channels(start=10, end=11)
+
+
+def peak_detection_example(ch, experiment):
+    """Peak detection example."""
+    ch_data, unit = experiment.get_channel_data(ch)
+    ch_data = split(ch_data, experiment.sample_rate, 1000)
+    ch_data = ch_data[12]
+    dp.detect_peaks(ch_data, show=True)
+
+
+def peak_detection_summary_example(ch, experiment):
+    """Peak detection example, plotting the amount of peaks of each
+       bucket."""
+    ch_data, unit = experiment.get_channel_data(ch)
+    ch_data = split(ch_data, experiment.sample_rate, 1000)
+    threshold = 15*1e-6
+    peaks = [len(dp.detect_peaks(x, mph=threshold)) for x in ch_data]
+    valleys = [len(dp.detect_peaks(x, valley=True, mph=-threshold)) for x in ch_data]
+    plt.plot(peaks)
+    plt.plot(valleys)
+    plt.show()
+
+
+def simple_moving_average_example(ch, experiment):
+    """SMA over a given dataset of a window size."""
+    ch_data, unit = experiment.get_channel_data(ch)
+    window_width = 10
+    sma = simple_moving_average(ch_data, window_width)
+    plt.plot(sma)
+    plt.show()
+
+
+def ridge_regression_example(ch, experiment):
+    """Try to do ridge regression over some training data. Does not do
+    anything at all for now."""
+    ch_data, unit = experiment.get_channel_data(0)
+    f, t, Zxx = stft(ch_data, fs=10000, window='hamming',
+                      nperseg=500, noverlap=500*0.8)
+    samples = np.transpose(np.abs(Zxx))
+    samples_per_sec = round(len(ch_data) / samples.shape[0])
+
+    positives = samples[12*100:int(12*100+0.6*100)]
+    negatives = samples[:60]
+
+    print(positives, negatives)
+    print(np.max(positives), np.max(negatives))
+
+    # Create training data.
+    x_train = np.append(positives, negatives, axis=0)
+    y_train = [True for x in range(60)] + [False for x in range(60)]
+
+    # Fit model.
+    clf = Ridge(alpha=1.0)
+    clf.fit(x_train, y_train)
+    clf.predict(samples[12*100].reshape(-1, 1).T)
+
+
+def spectral_analysis_example(ch, experiment):
+    """Spectral analysis."""
+    ch_timestamps, ch_data = experiment.get_channel_plot_data(0)
+    spectral_analysis(ch_data)
+
+
 def main():
     ch = chconv.MCSChannelConverter.mcsviz_to_channel[21]
     experiment = expmnt.Experiment('mea_data/1.h5')
 
-    """Example for bucketing data, here plotting the 13th bucket."""
-    # (giving the 12th second).
-    # ch_data, unit = experiment.get_channel_data(ch)
-    # ch_data = split(ch_data, experiment.sample_rate, 1000)
-
-    # plt.plot(ch_data[12])
-    # plt.show()
-
-    """Examples for plotting."""
-    # experiment.plot_channel(ch, start=11.8, end=12.8)
-    # experiment.plot_channels(start=10, end=11)
-
-    """Peak detection example."""
-    # ch_data, unit = experiment.get_channel_data(ch)
-    # ch_data = split(ch_data, experiment.sample_rate, 1000)
-    # ch_data = ch_data[12]
-    # dp.detect_peaks(ch_data, show=True)
-
-    """Peak detection example, plotting the amount of peaks of each
-    bucket."""
-    # ch_data, unit = experiment.get_channel_data(ch)
-    # ch_data = split(ch_data, experiment.sample_rate, 1000)
-    # threshold = 15*1e-6
-    # peaks = [len(dp.detect_peaks(x, mph=threshold)) for x in ch_data]
-    # valleys = [len(dp.detect_peaks(x, valley=True, mph=-threshold)) for x in ch_data]
-    # plt.plot(peaks)
-    # plt.plot(valleys)
-    # plt.show()
-
-    """SMA over a given dataset of a window size."""
-    # ch_data, unit = experiment.get_channel_data(ch)
-    # window_width = 10
-    # sma = simple_moving_average(ch_data, window_width)
-    # plt.plot(sma)
-    # plt.show()
-
-    """Try to do ridge regression over some training data. Does not do
-    anything at all for now."""
-    # ch_data, unit = experiment.get_channel_data(0)
-    # f, t, Zxx = stft(ch_data, fs=10000, window='hamming',
-    #                  nperseg=500, noverlap=500*0.8)
-    # samples = np.transpose(np.abs(Zxx))
-    # samples_per_sec = round(len(ch_data) / samples.shape[0])
-
-    # positives = samples[12*100:int(12*100+0.6*100)]
-    # negatives = samples[:60]
-
-    # print(positives, negatives)
-    # print(np.max(positives), np.max(negatives))
-
-    # # Create training data.
-    # x_train = np.append(positives, negatives, axis=0)
-    # y_train = [True for x in range(60)] + [False for x in range(60)]
-
-    # # Fit model.
-    # clf = Ridge(alpha=1.0)
-    # clf.fit(x_train, y_train)
-    # clf.predict(samples[12*100].reshape(-1, 1).T)
-
-    """Spectral analysis."""
-    ch_timestamps, ch_data = experiment.get_channel_plot_data(0)
-    spectral_analysis(ch_data)
+    spectral_analysis_example(ch, experiment)
 
 
 if __name__ == '__main__':

@@ -132,6 +132,118 @@
     <string>Stop Grinder</string>
    </property>
   </widget>
+  <widget class="QPushButton" name="bucketingButton">
+   <property name="enabled">
+    <bool>true</bool>
+   </property>
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>490</y>
+     <width>111</width>
+     <height>41</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Bucketing Example</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="plottingButton">
+   <property name="enabled">
+    <bool>true</bool>
+   </property>
+   <property name="geometry">
+    <rect>
+     <x>140</x>
+     <y>490</y>
+     <width>111</width>
+     <height>41</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Plotting Example</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="peakDetectionButton">
+   <property name="enabled">
+    <bool>true</bool>
+   </property>
+   <property name="geometry">
+    <rect>
+     <x>270</x>
+     <y>490</y>
+     <width>111</width>
+     <height>41</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Peak Detection Example</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="peakDetectionSummaryButton">
+   <property name="enabled">
+    <bool>true</bool>
+   </property>
+   <property name="geometry">
+    <rect>
+     <x>390</x>
+     <y>490</y>
+     <width>111</width>
+     <height>41</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Peak Detection Summary Example</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="simpleMovingAverageButton">
+   <property name="enabled">
+    <bool>true</bool>
+   </property>
+   <property name="geometry">
+    <rect>
+     <x>520</x>
+     <y>490</y>
+     <width>111</width>
+     <height>41</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Simple Moving Average Example</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="ridgeRegressionButton">
+   <property name="enabled">
+    <bool>true</bool>
+   </property>
+   <property name="geometry">
+    <rect>
+     <x>650</x>
+     <y>490</y>
+     <width>111</width>
+     <height>41</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Ridge Regression Example</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="spectralAnalysisButton">
+   <property name="enabled">
+    <bool>true</bool>
+   </property>
+   <property name="geometry">
+    <rect>
+     <x>780</x>
+     <y>490</y>
+     <width>111</width>
+     <height>41</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Simple Moving Average Example</string>
+   </property>
+  </widget>
  </widget>
  <resources/>
  <connections/>

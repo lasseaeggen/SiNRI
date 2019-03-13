@@ -8,6 +8,7 @@ import pyqtgraph as pg
 import socket
 import sthread
 import multiprocessing
+import analysis
 from multiprocessing import Process
 from PyQt5.QtWidgets import QApplication, QWidget, QToolTip, QPushButton, \
     QDesktopWidget, QLineEdit, QFormLayout, QMainWindow, QLabel, QTextEdit, \
@@ -49,6 +50,7 @@ class MainWindow(QWidget):
         self.stopGrinderButton.clicked.connect(self.stopGrinder)
         self.startCleavizButton.clicked.connect(self.startCleaviz)
         self.stopMockButton.clicked.connect(self.stopMock)
+        self.bucketingButton.clicked.connect()
 
 
         self.show()
