@@ -1,0 +1,74 @@
+* How to install Spyking Circus in an Anaconda environment
+
+** Install Anaconda
+
+Download Anaconda from [[https://www.anaconda.com/download/]].
+
+Install Anaconda, for GNU/Linux it looks like:
+#+BEGIN_SRC bash
+bash Anaconda3-<version>.sh
+#+END_SRC
+
+
+To create an anaconda environment that can run spyking circus, run the
+following commands.
+#+BEGIN_SRC bash
+conda env create --name spyking --file spyking_env.txt
+
+conda activate spyking # Do this for every new shell
+
+conda install -c conda-forge -c spyking-circus spyking-circus
+
+pip install spyking_requirements.txt
+#+END_SRC
+
+
+* Files
+** template.params
+This file specifies all parameters for a single hdf5 file. The
+template version is a starting point that works well with the MEA 60
+we've used in NTNU Cyborg.
+
+*** Usage
+Change ~mapping~ under ~[data]~ to the path to the ~mea_60.prb~ file.
+
+For each hdf5 file you want to analyze, copy this file so that it
+matches the name of your hdf5 file (without
+extension). E.g. ~spiky.h5~ and ~spiky.params~.
+
+More documentation on the file format in [[https://spyking-circus.readthedocs.io/en/latest/code/parameters.html][spyking circus'
+documentation]].
+
+** mea_60.prb
+A probe file that specifies the layout of the electrodes on the
+60EcoMEA. Radius of 50 \mu{}m and spacing between the electrodes is
+700 \mu{}m.
+
+
+* Running the launcher GUI
+To run the GUI to view previews and produce results, run:
+#+BEGIN_SRC bash
+spyking-circus-launcher
+#+END_SRC
+
+
+* Viewing clusters etc. in Phy.
+** From ~spyking-circus-launcher~
+Select the ~Converting~ option in the ~Tasks~ choices and ~Run~ it.
+
+Select the Data file and go to the ~View results~ tab. Choose ~Phy
+GUI~ and click ~Run~ to start the Phy GUI.
+
+** Terminal
+Convert files and start the Phy GUI:
+#+BEGIN_SRC bash
+spyking-circus <h5_file> -m converting -c 4 # 4 = number of CPUs
+circus-gui-python <h5_file>
+#+END_SRC
+
+* Terminal cheat sheet
+#+BEGIN_SRC bash
+spyking-circus -p <h5_file> # Preview of h5_file
+spyking-circus -m clustering <h5_file> # Simple clustering
+spyking-circus -r <h5_file> # Show results
+#+END_SRC

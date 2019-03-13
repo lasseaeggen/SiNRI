@@ -1,0 +1,47 @@
+name: spyking
+channels:
+  - defaults
+  - cryoem
+  - conda-forge
+dependencies:
+  - python
+  - pip
+  - numpy
+  - scipy
+  - h5py
+  - six
+  - cython
+  - ipython
+  - matplotlib
+  - pyqt=4
+  - h5py
+  - hdf5
+  - libgcc
+  - matplotlib
+  - numpy
+  - psutil
+  - pyqt >=4
+  - python >=3.5
+  - python-blosc
+  - qt >=4,<5
+  - scikit-learn
+  - scipy
+  - setuptools >=26
+  - tqdm !=4.15
+  - openmpi < 3.0
+  - mpi4py < 3.0
+  - pip:
+    - pytest
+    - requests
+    - responses
+    - tqdm
+    - click
+    - traitlets
+    - joblib
+    - pyopengl
+    - vispy
+    - klustakwik2
+    - klusta
+    - phy
+    - phycontrib
+    - spyking-circus

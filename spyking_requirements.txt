@@ -1,0 +1,13 @@
+pytest
+requests
+responses
+tqdm
+click
+traitlets
+joblib
+pyopengl
+vispy
+klustakwik2
+klusta
+phy
+phycontrib
