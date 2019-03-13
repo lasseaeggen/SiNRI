@@ -7,6 +7,7 @@ import grinder
 import pyqtgraph as pg
 import socket
 import sthread
+from multiprocessing import Process
 from PyQt5.QtWidgets import QApplication, QWidget, QToolTip, QPushButton, \
     QDesktopWidget, QLineEdit, QFormLayout, QMainWindow, QLabel, QTextEdit, \
     QAbstractScrollArea
@@ -18,6 +19,11 @@ from PyQt5 import uic
 
 MAINWINDOW_UI_FILE = 'style/interface.ui'
 MAINWINDOW_CSS_FILE = 'style/stylesheet.css'
+
+
+def forkCleaviz():
+    cleaviz_window = cleaviz.CleavizWindow(sample_rate=10000, segment_length=100)
+    cleaviz_window.run()
 
 class MainWindow(QWidget):
     def __init__(self):
@@ -42,8 +48,8 @@ class MainWindow(QWidget):
 
 
     def startCleaviz(self):
-        self.cleaviz = cleaviz.CleavizWindow(sample_rate=10000, segment_length=100)
-        self.cleaviz.run()
+        p = Process(target=forkCleaviz)
+        p.start()
 
 
     def startMock(self):
