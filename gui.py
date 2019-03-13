@@ -7,6 +7,7 @@ import grinder
 import pyqtgraph as pg
 import socket
 import sthread
+import multiprocessing
 from multiprocessing import Process
 from PyQt5.QtWidgets import QApplication, QWidget, QToolTip, QPushButton, \
     QDesktopWidget, QLineEdit, QFormLayout, QMainWindow, QLabel, QTextEdit, \
@@ -31,6 +32,11 @@ class MainWindow(QWidget):
         self.init_ui()
 
     def init_ui(self):
+        # This is required as Linux uses fork instead of spawn to
+        # create the new window. This will crash with an X error if
+        # the spawn method is not set.
+        multiprocessing.set_start_method('spawn')
+
         uic.loadUi(MAINWINDOW_UI_FILE, self)
         self.setWindowTitle('SiNRI')
         self.setObjectName("SiNRI")
