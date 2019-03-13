@@ -12,6 +12,7 @@ import struct
 import json
 import traceback
 import keyboard
+from exceptions import UnresponsiveMEAMEError
 
 
 class Stream(object):
@@ -210,7 +211,11 @@ class Server(object):
 
     def handle_client(self, client, addr):
         if self.meame_addr:
-            stream = self.setup_live_stream(client)
+            try:
+                stream = self.setup_live_stream(client)
+            except UnresponsiveMEAMEError:
+                client.close()
+                return
         else:
             stream = self.setup_playback_stream(client)
 

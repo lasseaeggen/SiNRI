@@ -6,6 +6,7 @@ import struct
 import requests
 import time
 import experiment
+from exceptions import UnresponsiveMEAMEError
 
 
 class MEAMEr(object):
@@ -117,7 +118,11 @@ class MEAMEr(object):
 
     def enable_DAQ_listener(self):
         self.DAQ_listener = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.DAQ_listener.connect((self.address, self.mea_daq_port))
+        try:
+            self.DAQ_listener.connect((self.address, self.mea_daq_port))
+        except ConnectionRefusedError as e:
+            logger.error('Remote MEAME is not responding, shutting down')
+            raise UnresponsiveMEAMEError('', e)
 
 
     def disable_DAQ_listener(self):

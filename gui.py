@@ -33,15 +33,17 @@ class MainWindow(QWidget):
             self.setStyleSheet(style_file.read())
 
         self.startMockButton.clicked.connect(self.startMock)
-        self.StartGrinderButton.clicked.connect(self.startGrinder)
+        self.startGrinderButton.clicked.connect(self.startGrinder)
         self.startCleavizButton.clicked.connect(self.startCleaviz)
         self.stopMockButton.clicked.connect(self.stopMock)
+
 
         self.show()
 
 
     def startCleaviz(self):
-        cleaviz.CleavizWindow(sample_rate=10000, segment_length=100)
+        self.cleaviz = cleaviz.CleavizWindow(sample_rate=10000, segment_length=100)
+        self.cleaviz.run()
 
 
     def startMock(self):
@@ -62,19 +64,19 @@ class MainWindow(QWidget):
         self.mockThread.stop()
         self.mockThread.join()
 
+    def _startGrinder(self):
+        try:
+            self.server = grinder.Server(8080,
+                            reflect=True,
+                            meame_addr="localhost")
+            self.server.listen()
+        except Exception as e:
+            logger.info('Shutting down gracefully')
+            self.server.socket.shutdown(socket.SHUT_RDWR)
+
 
     def startGrinder(self):
-        def startGinderThread():
-            try:
-                server = grinder.Server(8080,
-                                reflect=True,
-                                meame_addr="localhost")
-                server.listen()
-            except Exception as e:
-                logger.info('Shutting down gracefully')
-                server.socket.shutdown(socket.SHUT_RDWR)
-
-        grndThread = threading.Thread(target=startGinderThread, args=(), kwargs={})
+        grndThread = sthread.StoppableThread(target=self._startGrinder, args=(), kwargs={})
         grndThread.start()
 
 
