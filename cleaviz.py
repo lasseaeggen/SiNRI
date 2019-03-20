@@ -131,13 +131,16 @@ class CleavizWindow(pg.GraphicsWindow):
         segment_data = bytearray(b'')
 
         for current_channel in range(60):
-            # We are receiving 4-byte floats.
-            data = self.s.recv(self.segment_length*4 - bytes_received)
-            bytes_received = bytes_received + len(data)
-            segment_data = np.append(segment_data, data)
+            while True:
+                # We are receiving 4-byte floats.
+                data = self.s.recv(self.segment_length*4 - bytes_received)
+                bytes_received = bytes_received + len(data)
+                segment_data = np.append(segment_data, data)
 
-            if (bytes_received != self.segment_length*4):
-                continue
+                if (bytes_received != self.segment_length*4):
+                    continue
+                else:
+                    break
 
             # Print the received segment data.
             new_channel_data = []
