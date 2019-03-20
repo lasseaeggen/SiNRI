@@ -59,16 +59,28 @@ def serial_distance(serial_connection):
 
 
 def run_demo(connection):
-    amplitude_threshold = 1e-5
+    SMA_amplitude_threshold = 1e-5
+    peak_amplitude_threshold = 7.3e-5
+    previous_predictions = []
     sensor_thread = sthread.StoppableThread(target=receive_sensor)
     sensor_thread.start()
 
     try:
         while True:
-            segment = receive_segment(10000, connection)
-            print('A second has passed, {}'.format(abs(np.mean(segment))))
-            if abs(np.mean(segment))>= amplitude_threshold:
-                print('epic win')
+            segment = receive_segment(1000, connection)
+            print('A second has passed, {}, {}, {}'.
+                  format(abs(np.mean(segment)), np.max(segment), np.mean(previous_predictions)))
+
+            if abs(np.mean(segment))>= SMA_amplitude_threshold or \
+               np.max(segment) >= peak_amplitude_threshold:
+                prediction = 1.0
+            else:
+                prediction = 0.0
+            previous_predictions.append(prediction)
+            previous_predictions = previous_predictions[-10:]
+
+            if (np.mean(previous_predictions) >= 0.5):
+                print('seriously epic win')
 
             if sensor_distance < 100:
                 print('you are very close >:(')

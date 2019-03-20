@@ -11,6 +11,7 @@ def main(args):
         meame.setup_stim()
     if args.start:
         meame.start_stim()
+        meame.setup_stim()
     elif args.stop:
         meame.stop_stim()
     elif args.flash:

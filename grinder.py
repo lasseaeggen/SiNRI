@@ -207,7 +207,7 @@ class Server(object):
 
 
     def setup_live_stream(self, client):
-        channel = chconv.MCSChannelConverter.mcsviz_to_channel[22]
+        channel = chconv.MCSChannelConverter.mcsviz_to_channel[21]
         return LiveStream(client, channel, self.meame_addr)
 
 
