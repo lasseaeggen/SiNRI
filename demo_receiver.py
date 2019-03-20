@@ -6,6 +6,17 @@ import socket
 import traceback
 import struct
 import numpy as np
+import serial
+import threading
+import time
+
+
+sensor_distance = 1500
+def receive_sensor():
+    global sensor_distance
+    with serial.Serial('/dev/ttyUSB5') as ser:
+        while True:
+            sensor_distance = serial_distance(ser)
 
 
 def connect_to_grinder():
@@ -40,14 +51,23 @@ def receive_segment(segment_length, s):
         return channel_data
 
 
+def serial_distance(serial_connection):
+    return int(serial_connection.readline().strip())
+
+
 def run_demo(connection):
     amplitude_threshold = 1e-5
+    sensor_thread = threading.Thread(target=receive_sensor)
+    sensor_thread.start()
 
     while True:
         segment = receive_segment(10000, connection)
         print('A second has passed, {}'.format(abs(np.mean(segment))))
         if abs(np.mean(segment))>= amplitude_threshold:
             print('epic win')
+
+        if sensor_distance < 100:
+            print('you are very close >:()')
 
 
 def main():

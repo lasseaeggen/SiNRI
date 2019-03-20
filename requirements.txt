@@ -6,3 +6,4 @@ keyboard
 matplotlib
 PyQt5
 sklearn
+pyserial
