@@ -7,7 +7,7 @@ import traceback
 import struct
 import numpy as np
 import serial
-import threading
+import sthread
 import time
 
 
@@ -17,6 +17,9 @@ def receive_sensor():
     with serial.Serial('/dev/ttyUSB5') as ser:
         while True:
             sensor_distance = serial_distance(ser)
+
+            if sthread.check_terminate_thread():
+                return
 
 
 def connect_to_grinder():
@@ -57,17 +60,20 @@ def serial_distance(serial_connection):
 
 def run_demo(connection):
     amplitude_threshold = 1e-5
-    sensor_thread = threading.Thread(target=receive_sensor)
+    sensor_thread = sthread.StoppableThread(target=receive_sensor)
     sensor_thread.start()
 
-    while True:
-        segment = receive_segment(10000, connection)
-        print('A second has passed, {}'.format(abs(np.mean(segment))))
-        if abs(np.mean(segment))>= amplitude_threshold:
-            print('epic win')
+    try:
+        while True:
+            segment = receive_segment(10000, connection)
+            print('A second has passed, {}'.format(abs(np.mean(segment))))
+            if abs(np.mean(segment))>= amplitude_threshold:
+                print('epic win')
 
-        if sensor_distance < 100:
-            print('you are very close >:()')
+            if sensor_distance < 100:
+                print('you are very close >:(')
+    except KeyboardInterrupt as e:
+        sensor_thread.stop()
 
 
 def main():
