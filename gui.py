@@ -21,9 +21,11 @@ from PyQt5 import uic
 
 MAINWINDOW_UI_FILE = 'style/interface.ui'
 MAINWINDOW_CSS_FILE = 'style/stylesheet.css'
+grinderStarted = False
+grinderStarted = False
 
 
-def forkCleaviz():
+def fork_cleaviz():
     cleaviz_window = cleaviz.CleavizWindow(sample_rate=10000, segment_length=100)
     cleaviz_window.run()
 
@@ -45,23 +47,25 @@ class MainWindow(QWidget):
         with open(MAINWINDOW_CSS_FILE) as style_file:
             self.setStyleSheet(style_file.read())
 
-        self.startMockButton.clicked.connect(self.startMock)
-        self.startGrinderButton.clicked.connect(self.startGrinder)
-        self.stopGrinderButton.clicked.connect(self.stopGrinder)
-        self.startCleavizButton.clicked.connect(self.startCleaviz)
-        self.stopMockButton.clicked.connect(self.stopMock)
-        self.bucketingButton.clicked.connect()
+        self.startMockButton.clicked.connect(self.start_mock)
+        self.startGrinderButton.clicked.connect(self.start_grinder)
+        self.stopGrinderButton.clicked.connect(self.stop_grinder)
+        self.startCleavizButton.clicked.connect(self.start_cleaviz)
+        self.stopMockButton.clicked.connect(self.stop_mock)
 
-
+        self.stimuliSetupButton.clicked.connect(self.setup_stimuli)
+        self.stimuliStartButton.clicked.connect(self.start_stimuli)
+        self.stimuliStopButton.clicked.connect(self.stop_stimuli)
+        self.stimuliFlashButton.clicked.connect(self.flash_stimuli)
         self.show()
 
 
-    def startCleaviz(self):
-        p = Process(target=forkCleaviz)
+    def start_cleaviz(self):
+        p = Process(target=fork_cleaviz)
         p.start()
 
 
-    def startMock(self):
+    def start_mock(self):
         try:
             if not self.mockThread.stopped():
                 return
@@ -74,7 +78,7 @@ class MainWindow(QWidget):
         self.mockThread.start()
 
 
-    def stopMock(self):
+    def stop_mock(self):
         self.runningStatusBar.setStyleSheet("#runningStatusBar { background-color: rgb(224, 3, 0); }")
         self.mockThread.stop()
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
@@ -82,7 +86,7 @@ class MainWindow(QWidget):
         self.mockThread.join()
 
 
-    def _startGrinder(self):
+    def _start_grinder(self):
         try:
             self.server = grinder.Server(8080,
                             reflect=True,
@@ -93,17 +97,33 @@ class MainWindow(QWidget):
             self.server.socket.shutdown(socket.SHUT_RDWR)
 
 
-    def startGrinder(self):
+    def start_grinder(self):
         self.grndThread = sthread.StoppableThread(target=self._startGrinder, args=(), kwargs={})
         self.grndThread.start()
 
 
-    def stopGrinder(self):
+    def stop_grinder(self):
         self.grndThread.stop()
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             s.connect(('localhost', 8080))
         self.grndThread.join()
         print("HELLO THERE")
+
+
+    def setup_stimuli(self):
+        print("Setup")
+
+
+    def start_stimuli(self):
+        print("Start")
+
+
+    def stop_stimuli(self):
+        print("Stop")
+
+
+    def flash_stimuli(self):
+        print("Flash")
 
 
 def main():

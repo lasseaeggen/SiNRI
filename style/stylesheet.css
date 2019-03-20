@@ -1,8 +1,48 @@
+.QPushButton{
+    text-fill: white;
+    font-weight: bold;
+    font-size: 15px;
+}
+
 #startCleavizButton {
-    background-color: rgb(72, 224, 31);
+    background-color: rgb(0, 234, 44);
+}
+
+#startGrinderButton:checked {
+    background-color: rgb(224, 3, 0);
+
+}
+
+#startGrinderButton {
+    background-color: rgb(0, 234, 44);
+}
+
+#startGrinderButton:hover {
+    background-color: rgb(0, 204, 46);
+
+}
+
+/*
+#startGrinderButton:!checked {
+    background-color: rgb(0, 234, 44);
+}
+*/
+
+#startMockButton{
+    background-color: rgb(0, 234, 44);
+}
+
+#startMockButton:hover{
+    background-color: rgb(0, 204, 46);
+}
+
+#startCleavizButton:hover {
+    background-color: rgb(0, 204, 46);
+
 
 }
 
 #runningStatusBar{
-        background-color: rgb(224, 3, 0);
+    background-color: rgb(224, 3, 0);
 }
+
