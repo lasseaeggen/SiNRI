@@ -99,7 +99,7 @@ class MainWindow(QWidget):
         with open(MAINWINDOW_CSS_FILE) as style_file:
             self.setStyleSheet(style_file.read())
 
-        self.startMockButton.clicked.connect(self.start_mock)
+        self.startMockButton.clicked.connect(self.toggle_mock)
         self.startGrinderButton.clicked.connect(self.start_grinder)
         self.startCleavizButton.clicked.connect(self.start_cleaviz)
 
@@ -163,6 +163,20 @@ class MainWindow(QWidget):
         p.start()
 
 
+    def change_button_colors(self, btn, background, color):
+        btn.setStyleSheet('background-color: {}; color: {};'.format(background, color))
+        btn.setAutoFillBackground(True)
+
+
+    def set_mock_button(self, b):
+        if b:
+            self.change_button_colors(self.startMockButton, 'red', 'white')
+            self.startMockButton.setText('STOP MOCK')
+        else:
+            self.change_button_colors(self.startMockButton, '#21c226', 'white')
+            self.startMockButton.setText('START MOCK')
+
+
     def start_mock(self):
         try:
             if not self.mockThread.stopped():
@@ -178,8 +192,25 @@ class MainWindow(QWidget):
     def stop_mock(self):
         self.mockThread.stop()
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            s.connect(('localhost', 12340))
+            try:
+                s.connect(('localhost', 12340))
+            except ConnectionRefusedError:
+                pass
         self.mockThread.join()
+
+
+    def toggle_mock(self):
+        try:
+            self.mock_running = self.mock_running ^ True
+        except AttributeError:
+            self.mock_running = True
+
+        if self.mock_running:
+            self.start_mock()
+        else:
+            self.stop_mock()
+
+        self.set_mock_button(self.mock_running)
 
 
     def _start_grinder(self):
