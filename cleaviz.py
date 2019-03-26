@@ -195,6 +195,7 @@ class CleavizWindow(pg.GraphicsWindow):
                 try:
                     self.recv_segment()
                 except socket.timeout as e:
+                    logger.info('Cleaviz timed during data receive, exiting')
                     self.watchdog.stop()
                     self.watchdog.join()
                     return

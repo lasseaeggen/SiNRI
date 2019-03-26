@@ -14,6 +14,7 @@ import sys
 import queue
 import logging
 import time
+import meamer
 from multiprocessing import Process
 from PyQt5.QtWidgets import QApplication, QWidget, QToolTip, QPushButton, \
     QDesktopWidget, QLineEdit, QFormLayout, QMainWindow, QLabel, QTextEdit, \
@@ -139,6 +140,8 @@ class MainWindow(QWidget):
         self.mock_running = False
         self.grinder_running = False
 
+        self.meamer = meamer.MEAMEr('10.20.92.130')
+
 
     def close_event(self, event):
         self.log_signal_obj.running = False
@@ -250,19 +253,16 @@ class MainWindow(QWidget):
 
 
     def setup_stimuli(self):
-        print("Setup")
+        self.meamer.setup_stim()
 
 
     def start_stimuli(self):
-        print("Start")
+        self.meamer.start_stim()
+        self.meamer.setup_stim()
 
 
     def stop_stimuli(self):
-        print("Stop")
-
-
-    def flash_stimuli(self):
-        print("Flash")
+        self.meamer.stop_stim()
 
 
 def main():
