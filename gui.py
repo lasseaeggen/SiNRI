@@ -81,6 +81,14 @@ def fork_cleaviz():
     cleaviz_window.run()
 
 
+def analysis_loading(func):
+    def wrapper(self, example):
+        QApplication.setOverrideCursor(Qt.WaitCursor)
+        example()
+        QApplication.restoreOverrideCursor()
+    return wrapper
+
+
 class MainWindow(QWidget):
     def __init__(self):
         super().__init__()
@@ -107,6 +115,19 @@ class MainWindow(QWidget):
         self.stimuliSetupButton.clicked.connect(self.setup_stimuli)
         self.stimuliStartButton.clicked.connect(self.start_stimuli)
         self.stimuliStopButton.clicked.connect(self.stop_stimuli)
+
+        self.bucketingButton.clicked.connect(
+            lambda: self.run_analysis_example(analysis.bucketing_example))
+        self.plottingButton.clicked.connect(
+            lambda: self.run_analysis_example(analysis.plotting_example))
+        self.peakDetectionButton.clicked.connect(
+            lambda: self.run_analysis_example(analysis.peak_detection_example))
+        self.summaryButton.clicked.connect(
+            lambda: self.run_analysis_example(analysis.peak_detection_summary_example))
+        self.smaButton.clicked.connect(
+            lambda: self.run_analysis_example(analysis.simple_moving_average_example))
+        self.spectralAnalysisButton.clicked.connect(
+            lambda: self.run_analysis_example(analysis.spectral_analysis_example))
 
         # Events.
         self.closeEvent = self.close_event
@@ -263,6 +284,12 @@ class MainWindow(QWidget):
 
     def stop_stimuli(self):
         self.meamer.stop_stim()
+
+
+    # Not strictly needed anymore, was used for threading before.
+    @analysis_loading
+    def run_analysis_example(self, example):
+        example()
 
 
 def main():

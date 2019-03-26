@@ -1,3 +1,6 @@
+import log
+logger = log.get_logger(__name__)
+
 import experiment as expmnt
 import channelconverter as chconv
 import numpy as np
@@ -102,6 +105,18 @@ def spectral_analysis(data):
     plt.show()
 
 
+# Only used such that you don't have to keep passing the channel and
+# experiment to all these analysis functions, as they all take the
+# same types of arguments.
+def pass_channel(func):
+    def analysis_func():
+        ch = chconv.MCSChannelConverter.mcsviz_to_channel[21]
+        experiment = expmnt.Experiment('mea_data/1.h5')
+        func(ch, experiment)
+    return analysis_func
+
+
+@pass_channel
 def bucketing_example(ch, experiment):
     """Example for bucketing data, here plotting the 13th bucket
     (giving the 12th second)."""
@@ -112,12 +127,14 @@ def bucketing_example(ch, experiment):
     plt.show()
 
 
+@pass_channel
 def plotting_example(ch, experiment):
     """Examples for plotting."""
     experiment.plot_channel(ch, start=11.8, end=12.8)
-    experiment.plot_channels(start=10, end=11)
+    # experiment.plot_channels(start=10, end=11)
 
 
+@pass_channel
 def peak_detection_example(ch, experiment):
     """Peak detection example."""
     ch_data, unit = experiment.get_channel_data(ch)
@@ -126,6 +143,7 @@ def peak_detection_example(ch, experiment):
     dp.detect_peaks(ch_data, show=True)
 
 
+@pass_channel
 def peak_detection_summary_example(ch, experiment):
     """Peak detection example, plotting the amount of peaks of each
        bucket."""
@@ -139,6 +157,7 @@ def peak_detection_summary_example(ch, experiment):
     plt.show()
 
 
+@pass_channel
 def simple_moving_average_example(ch, experiment):
     """SMA over a given dataset of a window size."""
     ch_data, unit = experiment.get_channel_data(ch)
@@ -148,6 +167,7 @@ def simple_moving_average_example(ch, experiment):
     plt.show()
 
 
+@pass_channel
 def ridge_regression_example(ch, experiment):
     """Try to do ridge regression over some training data. Does not do
     anything at all for now."""
@@ -173,6 +193,7 @@ def ridge_regression_example(ch, experiment):
     clf.predict(samples[12*100].reshape(-1, 1).T)
 
 
+@pass_channel
 def spectral_analysis_example(ch, experiment):
     """Spectral analysis."""
     ch_timestamps, ch_data = experiment.get_channel_plot_data(0)
@@ -180,10 +201,7 @@ def spectral_analysis_example(ch, experiment):
 
 
 def main():
-    ch = chconv.MCSChannelConverter.mcsviz_to_channel[21]
-    experiment = expmnt.Experiment('mea_data/1.h5')
-
-    spectral_analysis_example(ch, experiment)
+    spectral_analysis_example()
 
 
 if __name__ == '__main__':

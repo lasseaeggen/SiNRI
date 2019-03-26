@@ -459,6 +459,9 @@ color: &quot;white&quot;;</string>
 color: &quot;#eb3737&quot;;</string>
     </property>
    </widget>
+   <zorder>label_8</zorder>
+   <zorder>logArea</zorder>
+   <zorder>smaButton</zorder>
   </widget>
   <widget class="QWidget" name="widget_6" native="true">
    <property name="geometry">
@@ -576,7 +579,7 @@ color: &quot;#eb3737&quot;;</string>
      <string>PEAKS</string>
     </property>
    </widget>
-   <widget class="QPushButton" name="peakDetectionSummaryButton">
+   <widget class="QPushButton" name="summaryButton">
     <property name="enabled">
      <bool>true</bool>
     </property>
@@ -602,7 +605,7 @@ color: &quot;#eb3737&quot;;</string>
      <string>SUMMARY</string>
     </property>
    </widget>
-   <widget class="QPushButton" name="simpleMovingAverageButton">
+   <widget class="QPushButton" name="smaButton">
     <property name="enabled">
      <bool>true</bool>
     </property>
