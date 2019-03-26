@@ -49,15 +49,21 @@ class MainWindow(QWidget):
 
         self.startMockButton.clicked.connect(self.start_mock)
         self.startGrinderButton.clicked.connect(self.start_grinder)
-        self.stopGrinderButton.clicked.connect(self.stop_grinder)
         self.startCleavizButton.clicked.connect(self.start_cleaviz)
-        self.stopMockButton.clicked.connect(self.stop_mock)
 
         self.stimuliSetupButton.clicked.connect(self.setup_stimuli)
         self.stimuliStartButton.clicked.connect(self.start_stimuli)
         self.stimuliStopButton.clicked.connect(self.stop_stimuli)
-        self.stimuliFlashButton.clicked.connect(self.flash_stimuli)
         self.show()
+
+        # I have no idea why this is needed. Jeez.
+        self.startGrinderButton.setAutoFillBackground(True)
+        self.reflectButton.setAutoFillBackground(True)
+        self.startMockButton.setAutoFillBackground(True)
+        self.startCleavizButton.setAutoFillBackground(True)
+        self.stimuliSetupButton.setAutoFillBackground(True)
+        self.stimuliStartButton.setAutoFillBackground(True)
+        self.stimuliStopButton.setAutoFillBackground(True)
 
 
     def start_cleaviz(self):
