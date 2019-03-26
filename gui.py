@@ -101,9 +101,6 @@ class MainWindow(QWidget):
         # the spawn method is not set.
         multiprocessing.set_start_method('spawn')
 
-        # This is required to send stim requests to the remote MEAME.
-        self.meame = meamer.MEAMEr('10.20.92.130')
-
         uic.loadUi(MAINWINDOW_UI_FILE, self)
         self.setWindowTitle('SiNRI')
         self.setObjectName("SiNRI")
