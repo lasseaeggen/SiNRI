@@ -445,7 +445,7 @@ color: &quot;white&quot;;</string>
      <set>Qt::AlignCenter</set>
     </property>
    </widget>
-   <widget class="QTextBrowser" name="textBrowser">
+   <widget class="QTextBrowser" name="logArea">
     <property name="geometry">
      <rect>
       <x>10</x>
@@ -455,7 +455,8 @@ color: &quot;white&quot;;</string>
      </rect>
     </property>
     <property name="styleSheet">
-     <string notr="true">background-color: &quot;black&quot;;</string>
+     <string notr="true">background-color: &quot;black&quot;;
+color: &quot;#eb3737&quot;;</string>
     </property>
    </widget>
   </widget>
