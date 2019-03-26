@@ -100,7 +100,7 @@ class MainWindow(QWidget):
             self.setStyleSheet(style_file.read())
 
         self.startMockButton.clicked.connect(self.toggle_mock)
-        self.startGrinderButton.clicked.connect(self.start_grinder)
+        self.startGrinderButton.clicked.connect(self.toggle_grinder)
         self.startCleavizButton.clicked.connect(self.start_cleaviz)
 
         self.stimuliSetupButton.clicked.connect(self.setup_stimuli)
@@ -136,9 +136,17 @@ class MainWindow(QWidget):
         self.log_t.started.connect(self.log_signal_obj.run)
         self.log_t.start()
 
+        self.mock_running = False
+        self.grinder_running = False
+
 
     def close_event(self, event):
         self.log_signal_obj.running = False
+
+        if self.mock_running:
+            self.stop_mock()
+        if self.grinder_running:
+            self.stop_grinder()
 
         # We need to force re-evaluation of logging thread with print
         # to exit.
@@ -164,17 +172,14 @@ class MainWindow(QWidget):
 
 
     def change_button_colors(self, btn, background, color):
-        btn.setStyleSheet('background-color: {}; color: {};'.format(background, color))
+        btn.setStyleSheet('background-color: {};'
+                          'color: {};'.format(background, color))
         btn.setAutoFillBackground(True)
 
 
-    def set_mock_button(self, b):
-        if b:
-            self.change_button_colors(self.startMockButton, 'red', 'white')
-            self.startMockButton.setText('STOP MOCK')
-        else:
-            self.change_button_colors(self.startMockButton, '#21c226', 'white')
-            self.startMockButton.setText('START MOCK')
+    def set_button_style(self, btn, background, color, text):
+        self.change_button_colors(btn, background, color)
+        btn.setText(text)
 
 
     def start_mock(self):
@@ -200,17 +205,14 @@ class MainWindow(QWidget):
 
 
     def toggle_mock(self):
-        try:
-            self.mock_running = self.mock_running ^ True
-        except AttributeError:
-            self.mock_running = True
+        self.mock_running = self.mock_running ^ True
 
         if self.mock_running:
             self.start_mock()
+            self.set_button_style(self.startMockButton, 'red', 'white', 'STOP MOCK')
         else:
             self.stop_mock()
-
-        self.set_mock_button(self.mock_running)
+            self.set_button_style(self.startMockButton, '#21c226', 'white', 'START MOCK')
 
 
     def _start_grinder(self):
@@ -234,7 +236,17 @@ class MainWindow(QWidget):
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             s.connect(('localhost', 8080))
         self.grndThread.join()
-        print("HELLO THERE")
+
+
+    def toggle_grinder(self):
+        self.grinder_running = self.grinder_running ^ True
+
+        if self.grinder_running:
+            self.start_grinder()
+            self.set_button_style(self.startGrinderButton, 'red', 'white', 'STOP GRINDER')
+        else:
+            self.stop_grinder()
+            self.set_button_style(self.startGrinderButton, '#21c226', 'white', 'START GRINDER')
 
 
     def setup_stimuli(self):

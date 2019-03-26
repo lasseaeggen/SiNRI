@@ -129,6 +129,7 @@ class CleavizWindow(pg.GraphicsWindow):
     def recv_segment(self):
         bytes_received = 0
         segment_data = bytearray(b'')
+        self.s.settimeout(1.0)
 
         for current_channel in range(60):
             while True:
@@ -191,7 +192,13 @@ class CleavizWindow(pg.GraphicsWindow):
                 if not self.running:
                     return
 
-                self.recv_segment()
+                try:
+                    self.recv_segment()
+                except socket.timeout as e:
+                    self.watchdog.stop()
+                    self.watchdog.join()
+                    return
+
                 segment_counter = (segment_counter + 1) % segment_mod
                 if segment_counter == 0:
                     self.update_plots()

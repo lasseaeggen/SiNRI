@@ -158,9 +158,9 @@ class Server(object):
         try:
             self.socket.listen(5)
             while True:
-                if sthread.check_terminate_thread(): return
                 (client, addr) = self.socket.accept()
                 client.settimeout(60)
+                if sthread.check_terminate_thread(): return
                 logger.info('Received connection from {addr}'.format(addr=addr))
                 threading.Thread(target=self.handle_client, args=(client, addr)).start()
         except (KeyboardInterrupt, SystemExit):
@@ -217,6 +217,7 @@ class Server(object):
                 stream = self.setup_live_stream(client)
             except UnresponsiveMEAMEError:
                 client.close()
+                logger.info('Remote MEAME was unresponsive: a MEAME server must be running')
                 return
         else:
             stream = self.setup_playback_stream(client)
