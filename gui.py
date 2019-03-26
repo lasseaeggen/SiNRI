@@ -13,6 +13,7 @@ import analysis
 import sys
 import queue
 import logging
+import time
 from multiprocessing import Process
 from PyQt5.QtWidgets import QApplication, QWidget, QToolTip, QPushButton, \
     QDesktopWidget, QLineEdit, QFormLayout, QMainWindow, QLabel, QTextEdit, \
@@ -48,6 +49,7 @@ class LogStream(object):
 
 class QLogOutputter(QObject):
     stdout_signal = pyqtSignal(str)
+    running = True
 
     def __init__(self, q, *args, **kwargs):
         QObject.__init__(self, *args, **kwargs)
@@ -56,7 +58,7 @@ class QLogOutputter(QObject):
 
     @pyqtSlot()
     def run(self):
-        while True:
+        while self.running:
             text = self.q.get()
             self.stdout_signal.emit(text)
 
@@ -106,7 +108,7 @@ class MainWindow(QWidget):
         self.stimuliStopButton.clicked.connect(self.stop_stimuli)
 
         # Events.
-        # self.closeEvent = self.close_event
+        self.closeEvent = self.close_event
 
         self.show()
 
@@ -133,6 +135,16 @@ class MainWindow(QWidget):
         self.log_signal_obj.moveToThread(self.log_t)
         self.log_t.started.connect(self.log_signal_obj.run)
         self.log_t.start()
+
+
+    def close_event(self, event):
+        self.log_signal_obj.running = False
+
+        # We need to force re-evaluation of logging thread with print
+        # to exit.
+        print('Logging thread exited')
+        self.log_t.terminate()
+        self.log_t.wait()
 
 
     def add_custom_log_handler(self):
@@ -196,7 +208,6 @@ class MainWindow(QWidget):
 
     def setup_stimuli(self):
         print("Setup")
-        logger.info('Setup')
 
 
     def start_stimuli(self):
