@@ -359,16 +359,13 @@ class MainWindow(QWidget):
         self.meamer.stop_stim()
 
 
-    # ThomasFix!!! Will hang the application..
     def select_experiment(self):
-        print('hello world experiment')
-        # print("Browsing Experiment Files...")
-        # file_name, _ = QFileDialog.getOpenFileName(self, str("Open File"), './mea_data')
-        # print("TEST")
-        # if file_name:
-        #     print("Setting file name: " + file_name)
-        #     analysis.selected_file(file_name)
-        #     # Pass this filename to analysis (pass_channel())
+        print("Browsing Experiment Files...")
+        file_name, _ = QFileDialog.getOpenFileName(self, str("Open File"), './mea_data')
+        print("TEST")
+        if file_name:
+            print("Setting file name: " + file_name)
+            analysis.selected_file(file_name)
 
 
     # Not strictly needed anymore, was used for threading before.
