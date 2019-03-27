@@ -130,6 +130,8 @@ class MainWindow(QWidget):
         self.spectralAnalysisButton.clicked.connect(
             lambda: self.run_analysis_example(analysis.spectral_analysis_example))
 
+        # self.startDemoButton
+
         # Events.
         self.closeEvent = self.close_event
 

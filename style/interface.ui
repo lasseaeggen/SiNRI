@@ -23,7 +23,7 @@ font-family : Arial;</string>
      <x>10</x>
      <y>10</y>
      <width>221</width>
-     <height>221</height>
+     <height>131</height>
     </rect>
    </property>
    <property name="styleSheet">
@@ -89,43 +89,6 @@ color: &quot;white&quot;;</string>
     </property>
     <property name="text">
      <string>START GRINDER</string>
-    </property>
-    <property name="flat">
-     <bool>true</bool>
-    </property>
-   </widget>
-   <widget class="QPushButton" name="reflectButton">
-    <property name="enabled">
-     <bool>true</bool>
-    </property>
-    <property name="geometry">
-     <rect>
-      <x>10</x>
-      <y>130</y>
-      <width>199</width>
-      <height>81</height>
-     </rect>
-    </property>
-    <property name="font">
-     <font>
-      <family>Arial</family>
-      <pointsize>14</pointsize>
-      <weight>75</weight>
-      <bold>true</bold>
-     </font>
-    </property>
-    <property name="contextMenuPolicy">
-     <enum>Qt::PreventContextMenu</enum>
-    </property>
-    <property name="autoFillBackground">
-     <bool>false</bool>
-    </property>
-    <property name="styleSheet">
-     <string notr="true">background-color: &quot;#21c226&quot;;
-color: &quot;white&quot;;</string>
-    </property>
-    <property name="text">
-     <string>REFLECT ON</string>
     </property>
     <property name="flat">
      <bool>true</bool>
@@ -481,9 +444,9 @@ color: &quot;#eb3737&quot;;</string>
   <widget class="QWidget" name="widget_6" native="true">
    <property name="geometry">
     <rect>
-     <x>240</x>
+     <x>10</x>
      <y>150</y>
-     <width>611</width>
+     <width>701</width>
      <height>81</height>
     </rect>
    </property>
@@ -495,7 +458,7 @@ color: &quot;#eb3737&quot;;</string>
      <rect>
       <x>0</x>
       <y>0</y>
-      <width>611</width>
+      <width>841</width>
       <height>21</height>
      </rect>
     </property>
@@ -523,9 +486,9 @@ color: &quot;#eb3737&quot;;</string>
     </property>
     <property name="geometry">
      <rect>
-      <x>10</x>
+      <x>160</x>
       <y>30</y>
-      <width>91</width>
+      <width>81</width>
       <height>41</height>
      </rect>
     </property>
@@ -550,9 +513,9 @@ color: &quot;#eb3737&quot;;</string>
     </property>
     <property name="geometry">
      <rect>
-      <x>110</x>
+      <x>250</x>
       <y>30</y>
-      <width>91</width>
+      <width>81</width>
       <height>41</height>
      </rect>
     </property>
@@ -577,9 +540,9 @@ color: &quot;#eb3737&quot;;</string>
     </property>
     <property name="geometry">
      <rect>
-      <x>210</x>
+      <x>340</x>
       <y>30</y>
-      <width>91</width>
+      <width>81</width>
       <height>41</height>
      </rect>
     </property>
@@ -604,9 +567,9 @@ color: &quot;#eb3737&quot;;</string>
     </property>
     <property name="geometry">
      <rect>
-      <x>310</x>
+      <x>430</x>
       <y>30</y>
-      <width>91</width>
+      <width>81</width>
       <height>41</height>
      </rect>
     </property>
@@ -631,9 +594,9 @@ color: &quot;#eb3737&quot;;</string>
     </property>
     <property name="geometry">
      <rect>
-      <x>410</x>
+      <x>520</x>
       <y>30</y>
-      <width>91</width>
+      <width>81</width>
       <height>41</height>
      </rect>
     </property>
@@ -658,9 +621,9 @@ color: &quot;#eb3737&quot;;</string>
     </property>
     <property name="geometry">
      <rect>
-      <x>512</x>
+      <x>610</x>
       <y>30</y>
-      <width>91</width>
+      <width>81</width>
       <height>41</height>
      </rect>
     </property>
@@ -679,6 +642,100 @@ color: &quot;#eb3737&quot;;</string>
      <string>SPECTRAL</string>
     </property>
    </widget>
+   <widget class="QPushButton" name="bucketingButton_3">
+    <property name="enabled">
+     <bool>true</bool>
+    </property>
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>30</y>
+      <width>121</width>
+      <height>41</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <family>Arial</family>
+      <pointsize>8</pointsize>
+      <weight>75</weight>
+      <bold>true</bold>
+     </font>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">background-color: &quot;#f9f9f9&quot;;</string>
+    </property>
+    <property name="text">
+     <string>SELECT EXPERIMENT</string>
+    </property>
+   </widget>
+  </widget>
+  <widget class="QWidget" name="widget_7" native="true">
+   <property name="geometry">
+    <rect>
+     <x>720</x>
+     <y>150</y>
+     <width>131</width>
+     <height>81</height>
+    </rect>
+   </property>
+   <property name="styleSheet">
+    <string notr="true">background-color: &quot;#b3b3b3&quot;;</string>
+   </property>
+   <widget class="QPushButton" name="startDemoButton">
+    <property name="enabled">
+     <bool>true</bool>
+    </property>
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>30</y>
+      <width>111</width>
+      <height>41</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <family>Arial</family>
+      <pointsize>8</pointsize>
+      <weight>75</weight>
+      <bold>true</bold>
+     </font>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">background-color: &quot;white&quot;;</string>
+    </property>
+    <property name="text">
+     <string>START DEMO</string>
+    </property>
+   </widget>
+  </widget>
+  <widget class="QLabel" name="label_10">
+   <property name="geometry">
+    <rect>
+     <x>720</x>
+     <y>150</y>
+     <width>131</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <family>Arial</family>
+     <pointsize>12</pointsize>
+     <weight>50</weight>
+     <bold>false</bold>
+    </font>
+   </property>
+   <property name="styleSheet">
+    <string notr="true">background-color: &quot;#e6e6e6&quot;;</string>
+   </property>
+   <property name="text">
+    <string>DEMO</string>
+   </property>
+   <property name="alignment">
+    <set>Qt::AlignCenter</set>
+   </property>
   </widget>
  </widget>
  <resources/>
