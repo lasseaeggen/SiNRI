@@ -110,6 +110,9 @@ class DemoWidget(QWidget):
 
         self.show()
 
+        self.checkSensorButton.setAutoFillBackground(True)
+        self.initDemoButton.setAutoFillBackground(True)
+
 
     def close_event(self, event):
         try:
@@ -139,7 +142,7 @@ class DemoWidget(QWidget):
             if not demo_receiver.prediction_event.wait(timeout=1):
                 continue
             else:
-                color = 'red' if not demo_receiver.is_object_close else 'green'
+                color = 'red' if not demo_receiver.stimuli_state else 'green'
                 self.distanceStatus.setStyleSheet('background-color: {};'.format(color))
                 demo_receiver.prediction_event.clear()
 
@@ -184,7 +187,7 @@ class MainWindow(QWidget):
 
         self.selectExperimentButton.clicked.connect(self.select_experiment)
         self.bucketingButton.clicked.connect(
-            lambda: self.run_analysis_example(analysis.bucketing_example))
+            lambda: print(threading.enumerate()) and self.run_analysis_example(analysis.bucketing_example))
         self.plottingButton.clicked.connect(
             lambda: self.run_analysis_example(analysis.plotting_example))
         self.peakDetectionButton.clicked.connect(

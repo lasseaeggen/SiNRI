@@ -19,6 +19,7 @@ sensor_distance = 1500
 sensor_distances = []
 is_object_close = False
 prediction_event = threading.Event()
+stimuli_state = False
 
 
 def check_sensor_active():
@@ -86,6 +87,8 @@ def serial_distance(serial_connection):
 
 
 def run_demo(connection, verbose=True):
+    global stimuli_state
+
     meame = meamer.MEAMEr('10.20.92.130')
     SMA_amplitude_threshold = 1e-5
     peak_amplitude_threshold = 7.3e-5
@@ -98,6 +101,8 @@ def run_demo(connection, verbose=True):
     try:
         while True:
             if sthread.check_terminate_thread():
+                sensor_thread.stop()
+                sensor_thread.join()
                 return
 
             segment = receive_segment(1000, connection)
@@ -120,13 +125,16 @@ def run_demo(connection, verbose=True):
             previous_predictions = previous_predictions[-10:]
 
             if (np.mean(previous_predictions) >= 0.5):
-                if verbose:
-                    logger.info('seriously epic win')
+                if not stimuli_state:
+                    prediction_event.set()
+                stimuli_state = True
+            else:
+                if stimuli_state:
+                    prediction_event.set()
+                stimuli_state = False
 
             if previous_object_state != is_object_close:
                 previous_object_state ^= True
-
-                prediction_event.set()
 
                 if previous_object_state:
                     meame.start_stim()
