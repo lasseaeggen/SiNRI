@@ -198,6 +198,7 @@ class MainWindow(QWidget):
 
         # Events.
         self.closeEvent = self.close_event
+        self.setWindowIcon(QIcon('style/img/bs19_yellow_icon.png'))
 
         self.show()
 
