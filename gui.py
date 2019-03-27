@@ -15,6 +15,7 @@ import queue
 import logging
 import time
 import meamer
+import demo_receiver
 from multiprocessing import Process
 from PyQt5.QtWidgets import QApplication, QWidget, QToolTip, QPushButton, \
     QDesktopWidget, QLineEdit, QFormLayout, QMainWindow, QLabel, QTextEdit, \
@@ -28,6 +29,7 @@ from PyQt5 import uic
 
 
 MAINWINDOW_UI_FILE = 'style/interface.ui'
+DEMOWINDOW_UI_FILE = 'style/demo.ui'
 MAINWINDOW_CSS_FILE = 'style/stylesheet.css'
 grinderStarted = False
 grinderStarted = False
@@ -89,6 +91,68 @@ def analysis_loading(func):
     return wrapper
 
 
+class DemoWidget(QWidget):
+    def __init__(self):
+        super().__init__()
+        self.init_ui()
+
+
+    def init_ui(self):
+        uic.loadUi(DEMOWINDOW_UI_FILE, self)
+
+        self.checkSensorButton.clicked.connect(self.set_sensor_status)
+        self.initDemoButton.clicked.connect(self.run_demo)
+
+        # Events.
+        self.closeEvent = self.close_event
+
+        self.demo_running = False
+
+        self.show()
+
+
+    def close_event(self, event):
+        try:
+            self.demo_running = False
+            self.demo_thread.join()
+        except AttributeError as e:
+            pass
+
+
+    def set_sensor_status(self):
+        if demo_receiver.check_sensor_active():
+            self.sensorStatus.setStyleSheet('background-color: "#21c226"')
+        else:
+            self.sensorStatus.setStyleSheet('background-color: "red"')
+
+
+    # Needed as an inner thread to keep the GUI responsive during
+    # demo. This is the cleanest way we found to make sure that we can
+    # exit the demo window and make sure that the demo ends.
+    def _run_demo(self):
+        self.demo_running = True
+        self._demo_thread = sthread.StoppableThread(
+            target=demo_receiver.connect_to_grinder, args=(False,))
+        self._demo_thread.start()
+
+        while self.demo_running:
+            if not demo_receiver.prediction_event.wait(timeout=1):
+                continue
+            else:
+                color = 'red' if not demo_receiver.is_object_close else 'green'
+                self.distanceStatus.setStyleSheet('background-color: {};'.format(color))
+                demo_receiver.prediction_event.clear()
+
+        self._demo_thread.stop()
+        self._demo_thread.join()
+
+
+    def run_demo(self):
+        self.demo_thread = sthread.StoppableThread(target=self._run_demo)
+        self.demo_thread.start()
+
+
+
 class MainWindow(QWidget):
     def __init__(self):
         super().__init__()
@@ -112,11 +176,13 @@ class MainWindow(QWidget):
         self.startMockButton.clicked.connect(self.toggle_mock)
         self.startGrinderButton.clicked.connect(self.toggle_grinder)
         self.startCleavizButton.clicked.connect(self.start_cleaviz)
+        self.startDemoButton.clicked.connect(self.init_demo_widget)
 
         self.stimuliSetupButton.clicked.connect(self.setup_stimuli)
         self.stimuliStartButton.clicked.connect(self.start_stimuli)
         self.stimuliStopButton.clicked.connect(self.stop_stimuli)
 
+        self.selectExperimentButton.clicked.connect(self.select_experiment)
         self.bucketingButton.clicked.connect(
             lambda: self.run_analysis_example(analysis.bucketing_example))
         self.plottingButton.clicked.connect(
@@ -129,8 +195,6 @@ class MainWindow(QWidget):
             lambda: self.run_analysis_example(analysis.simple_moving_average_example))
         self.spectralAnalysisButton.clicked.connect(
             lambda: self.run_analysis_example(analysis.spectral_analysis_example))
-
-        self.selectExperimentButton.clicked.connect(self.select_experiment)
 
         # Events.
         self.closeEvent = self.close_event
@@ -197,6 +261,10 @@ class MainWindow(QWidget):
         p.start()
 
 
+    def init_demo_widget(self):
+        self.demo_widget = DemoWidget()
+
+
     def change_button_colors(self, btn, background, color):
         btn.setStyleSheet('background-color: {};'
                           'color: {};'.format(background, color))
@@ -244,7 +312,7 @@ class MainWindow(QWidget):
     def _start_grinder(self):
         try:
             self.server = grinder.Server(8080,
-                                         reflect=True,
+                                         reflect=False,
                                          meame_addr="10.20.92.130")
             self.server.listen()
         except Exception as e:
@@ -259,8 +327,11 @@ class MainWindow(QWidget):
 
     def stop_grinder(self):
         self.grndThread.stop()
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            s.connect(('localhost', 8080))
+        try:
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                s.connect(('localhost', 8080))
+        except ConnectionRefusedError as e:
+            pass
         self.grndThread.join()
 
 
@@ -290,13 +361,14 @@ class MainWindow(QWidget):
 
     # ThomasFix!!! Will hang the application..
     def select_experiment(self):
-        print("Browsing Experiment Files...")
-        file_name, _ = QFileDialog.getOpenFileName(self, str("Open File"), './mea_data')
-        print("TEST")
-        if file_name:
-            print("Setting file name: " + file_name)
-            analysis.selected_file(file_name)
-            # Pass this filename to analysis (pass_channel())
+        print('hello world experiment')
+        # print("Browsing Experiment Files...")
+        # file_name, _ = QFileDialog.getOpenFileName(self, str("Open File"), './mea_data')
+        # print("TEST")
+        # if file_name:
+        #     print("Setting file name: " + file_name)
+        #     analysis.selected_file(file_name)
+        #     # Pass this filename to analysis (pass_channel())
 
 
     # Not strictly needed anymore, was used for threading before.
