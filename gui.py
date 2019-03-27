@@ -104,6 +104,7 @@ class MainWindow(QWidget):
         uic.loadUi(MAINWINDOW_UI_FILE, self)
         self.setWindowTitle('SiNRI')
         self.setObjectName("SiNRI")
+        # self.setWindowIcon(QIcon('style/SiNRI_logo.svg'))
 
         with open(MAINWINDOW_CSS_FILE) as style_file:
             self.setStyleSheet(style_file.read())
