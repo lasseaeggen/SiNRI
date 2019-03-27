@@ -105,13 +105,15 @@ def spectral_analysis(data):
     plt.show()
 
 
+experiment_fp = 'mea_data/1.h5'
+
 # Only used such that you don't have to keep passing the channel and
 # experiment to all these analysis functions, as they all take the
 # same types of arguments.
 def pass_channel(func):
     def analysis_func():
         ch = chconv.MCSChannelConverter.mcsviz_to_channel[21]
-        experiment = expmnt.Experiment('mea_data/1.h5')
+        experiment = expmnt.Experiment(experiment_fp)
         func(ch, experiment)
     return analysis_func
 

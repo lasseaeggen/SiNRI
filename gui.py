@@ -361,12 +361,11 @@ class MainWindow(QWidget):
 
 
     def select_experiment(self):
-        print("Browsing Experiment Files...")
+        logger.info("Browsing Experiment Files...")
         file_name, _ = QFileDialog.getOpenFileName(self, str("Open File"), './mea_data')
-        print("TEST")
         if file_name:
-            print("Setting file name: " + file_name)
-            analysis.selected_file(file_name)
+            logger.info("Setting file name: " + file_name)
+            analysis.experiment_fp = file_name
 
 
     # Not strictly needed anymore, was used for threading before.
