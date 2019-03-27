@@ -1,0 +1,5 @@
+<RCC>
+  <qresource prefix="newPrefix">
+    <file>bs19_black_icon.png</file>
+  </qresource>
+</RCC>

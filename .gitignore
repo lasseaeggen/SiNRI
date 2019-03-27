@@ -9,3 +9,4 @@ spyking/*.pyg
 spyking/*.out
 spyking/*.log
 spyking/*.aux
+*.pyc

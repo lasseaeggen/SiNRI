@@ -100,6 +100,11 @@ class DemoWidget(QWidget):
     def init_ui(self):
         uic.loadUi(DEMOWINDOW_UI_FILE, self)
 
+        self.black_mustache = 'style/img/bs19_black_icon.png'
+        self.yellow_mustache = 'style/img/bs19_yellow_icon.png'
+
+        self.toggle_mustache(True)
+
         self.checkSensorButton.clicked.connect(self.set_sensor_status)
         self.initDemoButton.clicked.connect(self.run_demo)
 
@@ -128,6 +133,13 @@ class DemoWidget(QWidget):
         btn.setAutoFillBackground(True)
 
 
+    def toggle_mustache(self, b):
+        mustache = self.black_mustache if b else self.yellow_mustache
+        self.mustacheLabel.setText(
+            '<html><head/><body><p><img src="{}"/></p></body></html>'
+            .format(mustache))
+
+
     def set_sensor_status(self):
         if demo_receiver.check_sensor_active():
             self.sensorStatus.setStyleSheet('background-color: "#21c226"')
@@ -148,8 +160,7 @@ class DemoWidget(QWidget):
             if not demo_receiver.prediction_event.wait(timeout=1):
                 continue
             else:
-                color = 'red' if not demo_receiver.stimuli_state else 'green'
-                self.distanceStatus.setStyleSheet('background-color: {};'.format(color))
+                self.toggle_mustache(not demo_receiver.stimuli_state)
                 demo_receiver.prediction_event.clear()
 
         self._demo_thread.stop()
@@ -166,7 +177,6 @@ class DemoWidget(QWidget):
             self.close_event(None)
             self.initDemoButton.setText('START DEMO')
             self.change_button_colors(self.initDemoButton, '#21c226', 'white')
-
 
 
 class MainWindow(QWidget):
