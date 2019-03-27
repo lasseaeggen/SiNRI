@@ -122,6 +122,12 @@ class DemoWidget(QWidget):
             pass
 
 
+    def change_button_colors(self, btn, background, color):
+        btn.setStyleSheet('background-color: {};'
+                          'color: {};'.format(background, color))
+        btn.setAutoFillBackground(True)
+
+
     def set_sensor_status(self):
         if demo_receiver.check_sensor_active():
             self.sensorStatus.setStyleSheet('background-color: "#21c226"')
@@ -151,8 +157,15 @@ class DemoWidget(QWidget):
 
 
     def run_demo(self):
-        self.demo_thread = sthread.StoppableThread(target=self._run_demo)
-        self.demo_thread.start()
+        if self.initDemoButton.text() == 'START DEMO':
+            self.demo_thread = sthread.StoppableThread(target=self._run_demo)
+            self.demo_thread.start()
+            self.initDemoButton.setText('STOP DEMO')
+            self.change_button_colors(self.initDemoButton, 'red', 'white')
+        else:
+            self.close_event(None)
+            self.initDemoButton.setText('START DEMO')
+            self.change_button_colors(self.initDemoButton, '#21c226', 'white')
 
 
 
@@ -187,7 +200,7 @@ class MainWindow(QWidget):
 
         self.selectExperimentButton.clicked.connect(self.select_experiment)
         self.bucketingButton.clicked.connect(
-            lambda: print(threading.enumerate()) and self.run_analysis_example(analysis.bucketing_example))
+            lambda: self.run_analysis_example(analysis.bucketing_example))
         self.plottingButton.clicked.connect(
             lambda: self.run_analysis_example(analysis.plotting_example))
         self.peakDetectionButton.clicked.connect(

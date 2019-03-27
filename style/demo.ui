@@ -184,10 +184,11 @@ font-family : Arial;</string>
      <enum>Qt::PreventContextMenu</enum>
     </property>
     <property name="autoFillBackground">
-     <bool>false</bool>
+     <bool>true</bool>
     </property>
     <property name="styleSheet">
-     <string notr="true">background-color: white;</string>
+     <string notr="true">background-color: &quot;#21c226&quot;;
+color: &quot;white&quot;;</string>
     </property>
     <property name="text">
      <string>START DEMO</string>
