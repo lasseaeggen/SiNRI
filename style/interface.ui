@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>Form</class>
- <widget class="QWidget" name="Form">
+ <class>form</class>
+ <widget class="QWidget" name="form">
   <property name="geometry">
    <rect>
     <x>0</x>
@@ -642,7 +642,7 @@ color: &quot;#eb3737&quot;;</string>
      <string>SPECTRAL</string>
     </property>
    </widget>
-   <widget class="QPushButton" name="bucketingButton_3">
+   <widget class="QPushButton" name="selectExperimentButton">
     <property name="enabled">
      <bool>true</bool>
     </property>
@@ -650,7 +650,7 @@ color: &quot;#eb3737&quot;;</string>
      <rect>
       <x>10</x>
       <y>30</y>
-      <width>121</width>
+      <width>141</width>
       <height>41</height>
      </rect>
     </property>

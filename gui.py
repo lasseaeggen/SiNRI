@@ -18,7 +18,7 @@ import meamer
 from multiprocessing import Process
 from PyQt5.QtWidgets import QApplication, QWidget, QToolTip, QPushButton, \
     QDesktopWidget, QLineEdit, QFormLayout, QMainWindow, QLabel, QTextEdit, \
-    QAbstractScrollArea
+    QAbstractScrollArea, QFileDialog
 from PyQt5.QtGui import QIcon, QFont, QTextCharFormat, QBrush, QColor, QTextCursor, \
     QTextFormat, QCursor
 from PyQt5.QtMultimedia import QSound
@@ -130,7 +130,7 @@ class MainWindow(QWidget):
         self.spectralAnalysisButton.clicked.connect(
             lambda: self.run_analysis_example(analysis.spectral_analysis_example))
 
-        # self.startDemoButton
+        self.selectExperimentButton.clicked.connect(self.select_experiment)
 
         # Events.
         self.closeEvent = self.close_event
@@ -286,6 +286,17 @@ class MainWindow(QWidget):
 
     def stop_stimuli(self):
         self.meamer.stop_stim()
+
+
+    # ThomasFix!!! Will hang the application..
+    def select_experiment(self):
+        print("Browsing Experiment Files...")
+        file_name, _ = QFileDialog.getOpenFileName(self, str("Open File"), './mea_data')
+        print("TEST")
+        if file_name:
+            print("Setting file name: " + file_name)
+            analysis.selected_file(file_name)
+            # Pass this filename to analysis (pass_channel())
 
 
     # Not strictly needed anymore, was used for threading before.
