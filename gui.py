@@ -140,7 +140,6 @@ class MainWindow(QWidget):
         # I have no idea why this is needed, the designer is not of
         # much help here. Jeez.
         self.startGrinderButton.setAutoFillBackground(True)
-        self.reflectButton.setAutoFillBackground(True)
         self.startMockButton.setAutoFillBackground(True)
         self.startCleavizButton.setAutoFillBackground(True)
         self.stimuliSetupButton.setAutoFillBackground(True)
