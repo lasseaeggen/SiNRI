@@ -181,7 +181,11 @@ class CleavizWindow(pg.GraphicsWindow):
         segment_counter = 0
 
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as self.s:
-            self.s.connect((self.address, self.port))
+            try:
+                self.s.connect((self.address, self.port))
+            except ConnectionRefusedError:
+                logger.info('Remote grinder was unresponsive: a grinder server must be running')
+                return
 
             # Are we struggling to keep up with the data stream?.
             self.watchdog = sthread.StoppableThread(target=sync_watchdog, args=([self.s, self.sample_rate]))

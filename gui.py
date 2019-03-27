@@ -337,6 +337,7 @@ class MainWindow(QWidget):
 
 
     def toggle_grinder(self):
+        time.sleep(0.01)
         self.grinder_running = self.grinder_running ^ True
 
         if self.grinder_running:
