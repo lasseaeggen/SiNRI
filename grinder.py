@@ -229,12 +229,19 @@ class Server(object):
             if sthread.check_terminate_thread(): return
             try:
                 if self.sawtooth:
-                    i = stream.current_tick % 100
+                    try:
+                        i = stream.current_tick % 100
+                        stream.current_tick += 1
+                    except:
+                        stream.current_tick = 0
+
                     if keyboard.is_pressed('y'):
                         data = [i for x in range(100)]
                     else:
                         data = [0 for x in range(100)]
+
                     client.send(struct.pack('{}f'.format(len(data)), *data))
+                    time.sleep(0.01)
                 else:
                     stream.publish()
                 stream.tick()

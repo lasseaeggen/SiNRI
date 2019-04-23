@@ -201,6 +201,7 @@ class MainWindow(QWidget):
 
         self.startMockButton.clicked.connect(self.toggle_mock)
         self.startGrinderButton.clicked.connect(self.toggle_grinder)
+        self.reflectButton.clicked.connect(self.toggle_reflect)
         self.startCleavizButton.clicked.connect(self.start_cleaviz)
         self.startDemoButton.clicked.connect(self.init_demo_widget)
 
@@ -231,6 +232,7 @@ class MainWindow(QWidget):
         # I have no idea why this is needed, the designer is not of
         # much help here. Jeez.
         self.startGrinderButton.setAutoFillBackground(True)
+        self.reflectButton.setAutoFillBackground(True)
         self.startMockButton.setAutoFillBackground(True)
         self.startCleavizButton.setAutoFillBackground(True)
         self.stimuliSetupButton.setAutoFillBackground(True)
@@ -253,6 +255,7 @@ class MainWindow(QWidget):
 
         self.mock_running = False
         self.grinder_running = False
+        self.reflect = True
 
         self.meamer = meamer.MEAMEr('10.20.92.130')
 
@@ -339,8 +342,9 @@ class MainWindow(QWidget):
     def _start_grinder(self):
         try:
             self.server = grinder.Server(8080,
-                                         reflect=False,
-                                         meame_addr="10.20.92.130")
+                                         reflect=self.reflect,
+                                         # sawtooth=True,
+                                         meame_addr='10.20.92.130')
             self.server.listen()
         except Exception as e:
             logger.info('Shutting down gracefully')
@@ -372,6 +376,20 @@ class MainWindow(QWidget):
         else:
             self.stop_grinder()
             self.set_button_style(self.startGrinderButton, '#21c226', 'white', 'START GRINDER')
+
+
+    def toggle_reflect(self):
+        self.reflect ^= True
+
+        if self.reflect:
+            self.set_button_style(self.reflectButton, '#21c226', 'white', '')
+        else:
+            self.set_button_style(self.reflectButton, 'red', 'white', '')
+
+        try:
+            self.server.reflect = self.reflect
+        except AttributeError:
+            pass
 
 
     def setup_stimuli(self):

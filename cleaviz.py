@@ -129,7 +129,7 @@ class CleavizWindow(pg.GraphicsWindow):
     def recv_segment(self):
         bytes_received = 0
         segment_data = bytearray(b'')
-        self.s.settimeout(1.0)
+        self.s.settimeout(3.0)
 
         for current_channel in range(60):
             while True:
@@ -222,7 +222,12 @@ class CleavizWindow(pg.GraphicsWindow):
             self.plots, self.plot_objects = init_plots(self, self.rows, self.cols)
         else:
             clicked_items = self.scene().items(event.scenePos())
-            self.zoomed_plot = [x for x in clicked_items if isinstance(x, pg.PlotItem)][0]
+
+            try:
+                self.zoomed_plot = [x for x in clicked_items if isinstance(x, pg.PlotItem)][0]
+            except IndexError:
+                return
+
             x_axis = self.zoomed_plot.items[0].xData
             y_axis = self.zoomed_plot.items[0].yData
             for i, plot in enumerate(self.plots):
