@@ -67,10 +67,10 @@ must also be supplied.
 If development of SiNRI is to be done without a remote MEAME server
 avaiable, the mock server can be used in its place. A mock can be initialized:
 
-`
+```
 mock = MEAMEMock(12340)
 mock.run()
-`
+```
 
 Currently the recording is hard coded to reside in mea_data/1.h5,
 which is a bit unfortunate. However, changing this to a command line
@@ -86,15 +86,21 @@ channel). Cleaviz requires a running Grinder server (currently hard
 coded as running on port 8080 on the local host), and can be launched
 like this:
 
-`
+```
 win = CleavizWindow(sample_rate=10000, segment_length=args.segment_length)
 win.run()
-`
+```
 
 ### analysis.py
 
 The analysis module contains several examples of methods to analyze
 incoming data streams, and should be fairly self-explanatory.
+
+### Sensor
+
+Arduino and ROS-code is available in the /sensor directory. The sensor
+in use is the HC-SR04 ultrasound sensor, used with Arduino UNO, of
+which there exists quite a few setup guides online.
 
 ### Lacking functionality for settings and error handling
 
@@ -108,3 +114,17 @@ system.
 
 ## The GUI
 
+The GUI is created as an easier-to-use alternative to launching
+several scripts to us SiNRI. `python3 gui.py` launches the Qt
+application, which can be used to start mock, Grinder and Cleaviz, as
+well to display the functionality of several analysis tools.
+
+## Demo project
+
+demo_receiver.py contains a live demo of the system. This is a
+closed-loop, where input from an external ultrasound sensor is used to
+apply stimulation to a neural chamber. The output from MEAME is
+analyzed to determine whether stimuli has been applied. This
+illustrates end-to-end usage of the SiNRI system, where it is used in
+its entirety to both apply stimulation and analyze the behaviour of a
+natural neural network.
