@@ -35,6 +35,9 @@ def serial_distance(serial_connection):
 
 
 def receive_sensor():
+    """
+    Receives a single reading from the external ultrasound sensor.
+    """
     global sensor_distance
     global sensor_distances
     global is_object_close
@@ -68,6 +71,11 @@ def connect_to_grinder(verbose=True):
 
 
 def receive_segment(segment_length, s):
+    """
+    <segment_length> determines the size of each segment of the
+    interleaved stream. <s> is socket that listens for the incoming
+    stream.
+    """
     bytes_received = 0
     segment_data = bytearray(b'')
     channel_data = []
@@ -125,6 +133,12 @@ def run_demo(connection, verbose=True):
             else:
                 prediction = 0.0
 
+            # We keep a window of size <window_size> of the previous
+            # predictions both for whether the external sensor is
+            # outputting an object closeby, but also for whether we
+            # are seeing stimuli in the received data stream. If quite
+            # a few of the predictions in this current window are
+            # positive, we determine that we should act.
             previous_predictions.append(prediction)
             previous_predictions = previous_predictions[-window_size:]
 

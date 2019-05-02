@@ -9,6 +9,10 @@ import numpy as np
 
 
 class Experiment(object):
+    """
+    Wraps recordings from MEA with nice-to-have methods for things
+    such as extracting data.
+    """
     # Statically set for all experiment objets.
     conversion_constant = 5.9605e-08
 
@@ -32,10 +36,16 @@ class Experiment(object):
 
 
     def get_channel_data(self, channel):
+        """
+        Returns the full range of data from a single channel.
+        """
         return self.stream.get_channel_in_range(channel, 0, self.stream.channel_data.shape[1])
 
 
     def get_channel_in_range(self, channel, i, j):
+        """
+        Returns channel data from sample <i> to sample <j>.
+        """
         return self.stream.get_channel_in_range(channel, i, j)
 
 
@@ -54,6 +64,9 @@ class Experiment(object):
 
 
     def info(self):
+        """
+        Outputs information about the corresponding experiment.
+        """
         print('Experiment INFO: {}'.format(self.filename))
         recording = self.data.recordings[0]
 

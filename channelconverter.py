@@ -1,4 +1,8 @@
 class MCSChannelConverter(object):
+    """
+    Converts a value from the MCS grid layout to the given index of
+    which the channel is contained within an interleaved data stream.
+    """
     mcsviz_to_channel = {
                    21 : 20,   31 : 18,   41 : 15,   51 : 14,   61 : 11,   71 : 9,
         12 : 23,   22 : 21,   32 : 19,   42 : 16,   52 : 13,   62 : 10,   72 : 8,    82 : 6,

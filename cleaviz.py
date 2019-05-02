@@ -62,6 +62,14 @@ def mcs_lookup(row, col):
 
 
 def downsample(x, ds):
+    """
+    A downsampling mechanism used to lower the amount of data points
+    that are to be passed to pyqtgraph. This simply runs a window
+    function over the given data, and replaces the data in the window
+    by just the min and max value. This has been found to resemble
+    what MCS does quite nicely. <x> is the data, while <ds> is the
+    downsampling rate.
+    """
     n = len(x) // ds
     new1 = np.empty((n, 2))
     new2 = np.array(x[:n*ds]).reshape((n, ds))
@@ -72,6 +80,10 @@ def downsample(x, ds):
 
 
 def init_plots(win, rows, cols):
+    """
+    Setup pyqtgraph plots to initialize drawing. <win> is a pyqtgraph
+    window, <rows> and <cols> is the sizing of the output window.
+    """
     plots = [None] * 60
     plot_objects = [None] * 60
     for i in range(rows):
@@ -127,6 +139,9 @@ class CleavizWindow(pg.GraphicsWindow):
 
 
     def recv_segment(self):
+        """
+        Receives a single segment from an incoming stream in a socket.
+        """
         bytes_received = 0
         segment_data = bytearray(b'')
         self.s.settimeout(3.0)

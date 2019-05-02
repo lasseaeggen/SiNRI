@@ -35,10 +35,19 @@ def split(data, sample_rate, ms):
 
 
 def simple_moving_average(data, N):
+    """
+    Convolves a SMA kernel of widow size <N> over the data stream
+    contained in <data>.
+    """
     return np.convolve(np.absolute(data), np.ones((N,))/N, mode='valid')
 
 
 def spectral_analysis(data):
+    """
+    A simple analysis for how to do spectral analysis on a stream,
+    <data>, in real time. Also illustrates how plots can be updated
+    live.
+    """
     sample_rate = 10000
     seconds = 35
     data_length = seconds * sample_rate
@@ -111,6 +120,11 @@ experiment_fp = 'mea_data/1.h5'
 # experiment to all these analysis functions, as they all take the
 # same types of arguments.
 def pass_channel(func):
+    """
+    A simple decorator to use on the examples contained in this
+    file. This will automatically pass a channel and experiment to
+    such analysis functions.
+    """
     def analysis_func():
         ch = chconv.MCSChannelConverter.mcsviz_to_channel[21]
         experiment = expmnt.Experiment(experiment_fp)
@@ -120,8 +134,10 @@ def pass_channel(func):
 
 @pass_channel
 def bucketing_example(ch, experiment):
-    """Example for bucketing data, here plotting the 13th bucket
-    (giving the 12th second)."""
+    """
+    Example for bucketing data, here plotting the 13th bucket (giving
+    the 12th second).
+    """
     ch_data, unit = experiment.get_channel_data(ch)
     ch_data = split(ch_data, experiment.sample_rate, 1000)
 
@@ -131,14 +147,18 @@ def bucketing_example(ch, experiment):
 
 @pass_channel
 def plotting_example(ch, experiment):
-    """Examples for plotting."""
+    """
+    Examples for plotting.
+    """
     experiment.plot_channel(ch, start=11.8, end=12.8)
     # experiment.plot_channels(start=10, end=11)
 
 
 @pass_channel
 def peak_detection_example(ch, experiment):
-    """Peak detection example."""
+    """
+    Peak detection example.
+    """
     ch_data, unit = experiment.get_channel_data(ch)
     ch_data = split(ch_data, experiment.sample_rate, 1000)
     ch_data = ch_data[12]
@@ -147,8 +167,10 @@ def peak_detection_example(ch, experiment):
 
 @pass_channel
 def peak_detection_summary_example(ch, experiment):
-    """Peak detection example, plotting the amount of peaks of each
-       bucket."""
+    """
+    Peak detection example, plotting the amount of peaks of each
+    bucket.
+    """
     ch_data, unit = experiment.get_channel_data(ch)
     ch_data = split(ch_data, experiment.sample_rate, 1000)
     threshold = 15*1e-6
@@ -161,7 +183,9 @@ def peak_detection_summary_example(ch, experiment):
 
 @pass_channel
 def simple_moving_average_example(ch, experiment):
-    """SMA over a given dataset of a window size."""
+    """
+    SMA over a given dataset of a window size.
+    """
     ch_data, unit = experiment.get_channel_data(ch)
     window_width = 10
     sma = simple_moving_average(ch_data, window_width)
@@ -171,8 +195,10 @@ def simple_moving_average_example(ch, experiment):
 
 @pass_channel
 def ridge_regression_example(ch, experiment):
-    """Try to do ridge regression over some training data. Does not do
-    anything at all for now."""
+    """
+    Try to do ridge regression over some training data. Does not do
+    anything at all for now.
+    """
     ch_data, unit = experiment.get_channel_data(0)
     f, t, Zxx = stft(ch_data, fs=10000, window='hamming',
                       nperseg=500, noverlap=500*0.8)
@@ -197,7 +223,9 @@ def ridge_regression_example(ch, experiment):
 
 @pass_channel
 def spectral_analysis_example(ch, experiment):
-    """Spectral analysis."""
+    """
+    Spectral analysis.
+    """
     ch_timestamps, ch_data = experiment.get_channel_plot_data(0)
     spectral_analysis(ch_data)
 
