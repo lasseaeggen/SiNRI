@@ -30,6 +30,10 @@ def check_sensor_active():
         return False
 
 
+def serial_distance(serial_connection):
+    return int(serial_connection.readline().strip())
+
+
 def receive_sensor():
     global sensor_distance
     global sensor_distances
@@ -82,10 +86,6 @@ def receive_segment(segment_length, s):
         return channel_data
 
 
-def serial_distance(serial_connection):
-    return int(serial_connection.readline().strip())
-
-
 def run_demo(connection, verbose=True):
     global stimuli_state
 
@@ -93,6 +93,7 @@ def run_demo(connection, verbose=True):
     SMA_amplitude_threshold = 1e-5
     peak_amplitude_threshold = 7.3e-5
     current_segment = 0
+    window_size = 10
     previous_predictions = []
     previous_object_state = False
     sensor_thread = sthread.StoppableThread(target=receive_sensor)
@@ -105,24 +106,27 @@ def run_demo(connection, verbose=True):
                 sensor_thread.join()
                 return
 
-            segment = receive_segment(1000, connection)
-
+            segment = receive_segment(segment_length=1000, connection=connection)
 
             if current_segment == 0:
                 with warnings.catch_warnings():
                     warnings.simplefilter('ignore', category=RuntimeWarning)
                     if verbose:
                         logger.info('A second has passed, {}, {}, {}'.
-                                    format(abs(np.mean(segment)), np.max(segment), np.mean(previous_predictions)))
-            current_segment = (current_segment + 1) % 10
+                                    format(abs(np.mean(segment)),
+                                           np.max(segment),
+                                           np.mean(previous_predictions)))
+
+            current_segment = (current_segment + 1) % window_size
 
             if abs(np.mean(segment))>= SMA_amplitude_threshold or \
                np.max(segment) >= peak_amplitude_threshold:
                 prediction = 1.0
             else:
                 prediction = 0.0
+
             previous_predictions.append(prediction)
-            previous_predictions = previous_predictions[-10:]
+            previous_predictions = previous_predictions[-window_size:]
 
             if (np.mean(previous_predictions) >= 0.5):
                 if not stimuli_state:
@@ -145,6 +149,7 @@ def run_demo(connection, verbose=True):
                     meame.stop_stim()
                     if verbose:
                         logger.info('Stopped remote MEAME stimuli')
+
     except KeyboardInterrupt as e:
         sensor_thread.stop()
 

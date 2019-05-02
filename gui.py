@@ -11,11 +11,13 @@ import sthread
 import multiprocessing
 import analysis
 import sys
+import os
 import queue
 import logging
 import time
 import meamer
 import demo_receiver
+import multiprocessing.connection
 from multiprocessing import Process
 from PyQt5.QtWidgets import QApplication, QWidget, QToolTip, QPushButton, \
     QDesktopWidget, QLineEdit, QFormLayout, QMainWindow, QLabel, QTextEdit, \
@@ -62,8 +64,17 @@ class QLogOutputter(QObject):
     @pyqtSlot()
     def run(self):
         while self.running:
-            text = self.q.get()
-            self.stdout_signal.emit(text)
+            try:
+                text = self.q.get(timeout=1)
+                self.stdout_signal.emit(text)
+            except queue.Empty:
+                pass
+
+            try:
+                text = self.mp_reader.readline()
+                self.stdout_signal.emit(text)
+            except AttributeError:
+                pass
 
 
 class QLoggingHandler(logging.Handler):
@@ -79,6 +90,10 @@ class QLoggingHandler(logging.Handler):
 
 
 def fork_cleaviz():
+    # os.dup2(w.fileno(), 1)
+
+    # print('fork cleaviz')
+
     cleaviz_window = cleaviz.CleavizWindow(sample_rate=10000, segment_length=1000)
     cleaviz_window.run()
 
@@ -287,6 +302,10 @@ class MainWindow(QWidget):
 
 
     def start_cleaviz(self):
+        # self.r, self.w = multiprocessing.Pipe()
+        # self.mp_reader = os.fdopen(self.r.fileno(), 'r')
+        # self.log_signal_obj.mp_reader = self.mp_reader
+
         p = Process(target=fork_cleaviz)
         p.start()
 
