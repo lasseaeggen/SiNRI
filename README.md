@@ -12,7 +12,7 @@ for the NTNU Cyborg project.
 
 ## Getting an MEA recording
 
-To use the SiNRI system, its is necessary to have available either a
+To use the SiNRI system, it is necessary to have available either a
 remote MEAME server that can supply live data, or HDF5-files that
 contain previous recordings. A recording is available at
 http://folk.ntnu.no/thomaav/meame/. Simply download the 1.h5-file, and
@@ -31,7 +31,7 @@ Use a venv if necessary.
 SiNRI consists of several individual modules that may be used
 together. Most of the .py-files contain a main entrypoint, such that
 the component can be launched standalone with command line arguments
-(launch the scripts with --help to get a lists of such
+(launch the scripts with --help to get a list of such
 arguments). Launching all the scripts may become cumbersome,
 especially if you do not know what all the components are meant to be
 doing. Consult the GUI documentation if you don't want to bother with
@@ -52,8 +52,8 @@ MEAME communication.
 
 Grinder is the demultiplexer of the system, and supports listening to
 both a live stream, and a recording contained in an HDF5-file (the act
-of actually receiving these streams are delecated to PlaybackStream
-and LiveStream objects). A Grinder server can be started as such:
+of actually receiving these streams is delegated to PlaybackStream and
+LiveStream objects). A Grinder server can be started as such:
 
 `server = Server(8080, reflect=args.reflect, meame_addr=args.live)`
 
@@ -81,7 +81,7 @@ flag with argparse should pose few problems.
 Cleaviz is a visualization tool created to be able to see incoming
 data streams in real time. This may serve as an invaluable debugging
 tool, as it makes it quite easy to see whether streams are
-demultiplexed in a wrong manner (e.g. by looking the grounded
+demultiplexed in a wrong manner (e.g. by looking at the grounded
 channel). Cleaviz requires a running Grinder server (currently hard
 coded as running on port 8080 on the local host), and can be launched
 like this:
@@ -106,7 +106,7 @@ which there exists quite a few setup guides online.
 
 The error handling of SiNRI is currently not quite optimal. Logging
 facilities are included, but very few custom exception handlers have
-been written, thus making most erros a bit too general. Settings
+been written, thus making most errors a bit too general. Settings
 should in the future be moved to a single place, such that settings
 such as chosen channels are not scattered all over the place. It
 works, but may be confusing for someone a bit more unfamiliar with the
@@ -115,7 +115,7 @@ system.
 ## The GUI
 
 The GUI is created as an easier-to-use alternative to launching
-several scripts to us SiNRI. `python3 gui.py` launches the Qt
+several scripts to use SiNRI. `python3 gui.py` launches the Qt
 application, which can be used to start mock, Grinder and Cleaviz, as
 well to display the functionality of several analysis tools.
 
